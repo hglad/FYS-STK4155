@@ -1,5 +1,6 @@
 from proj1_funcs import *
-np.random.seed(0)
+
+# np.random.seed()
 # Make data
 n = 100
 x = np.linspace(0, 1, n)
@@ -21,37 +22,26 @@ MSE_best_cv = np.zeros(max_p)
 # Perform cross-validation for different polynomial degrees
 j = 0
 for p in polys:
-    best_beta, MSE_best_cv[j] = cross_validation(x_train, y_train, z_train, 10, p=polys[j])
-    
-    # Predict using original test data (from train_test_split)
-    X_test = CreateDesignMatrix_X(x_test, y_test, polys[j])
-    z_pred = X_test @ best_beta
-    z_test_1d = np.ravel(z_test)
-
-    R2_scores[j] = metrics.r2_score(z_test_1d, z_pred)
-    MSE_values[j] = metrics.mean_squared_error(z_test_1d, z_pred)
+    R2_scores[j], MSE_values[j] = cross_validation(x_train, y_train, z_train, 10, p=polys[j])
     j += 1
 
-# Plot model scores
-plt.plot(polys, R2_scores, '-b', label='R2_test')
-plt.plot(polys, MSE_values, '-r', label='MSE_test')
+best_poly = polys[np.argmin(MSE_values)]
+print (best_poly)
+
+# Plot quantities as function of polynomial degree
+plt.plot(polys, R2_scores,  '-b', label='R2_cv_test')
+plt.plot(polys, MSE_values, '-r', label='MSE_cv_test')
 plt.legend()
 plt.show()
-# Compare MSE for train and test data
-plt.semilogy(polys, MSE_best_cv, '-b', label='MSE_train')
-plt.semilogy(polys, MSE_values, '-r', label='MSE_test')
-plt.legend()
-plt.show()
 
-# Regression
-# X = CreateDesignMatrix_X(x_train, y_train, p)
-# z_ = np.ravel(z_train)			# flattened array
-# beta = np.linalg.inv( np.dot(X.T, X) ) .dot(X.T) .dot(z_)
-#
-# # Create prediction using training points
-# z_pred = X @ beta
+# Find MSE using best polynomial (found from CV) on test data from train_test_split
+z_test_, z_pred_test = predict_poly(x_test, y_test, z_test, best_poly)
 
+# MSE using train data
+z_train_, z_pred_train = predict_poly(x_train, y_train, z_train, best_poly)
 
+print ("MSE (train data):", metrics.mean_squared_error(z_train_, z_pred_train))
+print ("MSE (test data):", metrics.mean_squared_error(z_test_, z_pred_test))
 
 
 #

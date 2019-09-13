@@ -70,35 +70,42 @@ def cross_validation(x_train, y_train, z_train, num_folds, p = 5):
 	R2_scores_cv = np.zeros(num_folds)
 	MSE_scores_cv = np.zeros(num_folds)
 	beta_array = np.zeros( (num_folds, len_beta) )
-
+	R2_sum = 0
+	MSE_sum = 0
 	i = 0
 	for train_inds, test_inds in kfold.split(x_train):
-	    x_train_k = x_train[train_inds]
-	    y_train_k = y_train[train_inds]
-	    z_train_k = z_train[train_inds]
-	    z_train_1d = np.ravel(z_train_k)
+		x_train_k = x_train[train_inds]
+		y_train_k = y_train[train_inds]
+		z_train_k = z_train[train_inds]
+		z_train_1d = np.ravel(z_train_k)
 
-	    x_test_k = x_train[test_inds]
-	    y_test_k = y_train[test_inds]
-	    z_test_k = z_train[test_inds]
-	    z_test_1d = np.ravel(z_test_k)
+		x_test_k = x_train[test_inds]
+		y_test_k = y_train[test_inds]
+		z_test_k = z_train[test_inds]
+		z_test_1d = np.ravel(z_test_k)
 
-	    # Compute model with train data from fold
-	    X_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
-	    beta_k = np.linalg.inv( np.dot(X_k.T, X_k) ) .dot(X_k.T) .dot(z_train_1d)
-	    beta_array[i] = beta_k
+		# Compute model with train data from fold
+		X_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
+		beta_k = np.linalg.inv( np.dot(X_k.T, X_k) ) .dot(X_k.T) .dot(z_train_1d)
+		beta_array[i] = beta_k
 
-	    # Predict with trained model using test data from fold
-	    X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p)
-	    z_pred_k = X_test_k @ beta_k
+		# Predict with trained model using test data from fold
+		X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p)
+		z_pred_k = X_test_k @ beta_k
 
-	    # Compute R2 and MSE scoores
-	    R2_scores_cv[i] = metrics.r2_score(z_test_1d, z_pred_k)
-	    MSE_scores_cv[i] = metrics.mean_squared_error(z_test_1d, z_pred_k)
-	    i += 1
+		# Compute R2 and MSE scoores
+		R2_sum += metrics.r2_score(z_test_1d, z_pred_k)
+		MSE_sum += metrics.mean_squared_error(z_test_1d, z_pred_k)
+		i += 1
 
-	# Return model (beta-values) that gives the best R2 score
-	# print ("Best R2 score from CV: ", np.max(R2_scores))
-	# print ("Best MSE from CV: ", np.min(MSE_scores))
-	return beta_array[ np.argmax(R2_scores_cv) ], np.min(MSE_scores_cv)
-	# return np.mean(MSE_scores_cv)
+	# Return mean of all MSEs for all folds
+	return R2_sum/num_folds, MSE_sum/num_folds
+
+# Create design matrix, find beta and predict
+def predict_poly(x, y, z, p):
+	X = CreateDesignMatrix_X(x, y, p)
+	z_ = np.ravel(z)
+	beta = np.linalg.inv(np.dot(X.T, X)) .dot(X.T) .dot(z_)
+	z_pred = X @ beta
+
+	return z_, z_pred

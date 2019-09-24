@@ -7,6 +7,8 @@ from random import random, seed
 import sklearn.metrics as metrics
 import sklearn.model_selection as mselect
 from sklearn.model_selection import KFold
+from imageio import imread
+
 
 def CreateDesignMatrix_X(x, y, p = 5):
 	"""
@@ -37,17 +39,28 @@ def FrankeFunction(x,y):
 
     return term1 + term2 + term3 + term4
 
-def plot_surf(x,y,z, color, alpha=1):
+def DataImport(filename, sc=10):
+	# Load the terrain
+	terrain1 = imread(filename)
+	# Show the terrain
+	downscaled = terrain1[0::sc,0::sc]
 
-	if len(x.shape) != 2:
-		sqx = int(np.sqrt(len(x)))
-		x = np.reshape(x, (sqx, sqx))
-	if len(y.shape) != 2:
-		sqy = int(np.sqrt(len(y)))
-		y = np.reshape(y, (sqy, sqy))
-	if len(z.shape) != 2:
-		sqz = int(np.sqrt(len(z)))
-		z = np.reshape(z, (sqz, sqz))
+	# plt.figure()
+	# plt.imshow(terrain1, cmap='gray')
+	# plt.figure()
+	# plt.imshow(downscaled, cmap='gray')
+	return downscaled
+
+def plot_surf(x,y,z, color, alpha=1):
+	# if len(x.shape) != 2:
+	# 	sqx = int(np.sqrt(len(x)))
+	# 	x = np.reshape(x, (sqx, sqx))
+	# if len(y.shape) != 2:
+	# 	sqy = int(np.sqrt(len(y)))
+	# 	y = np.reshape(y, (sqy, sqy))
+	# if len(z.shape) != 2:
+	# 	sqz = int(np.sqrt(len(z)))
+	# 	z = np.reshape(z, (sqz, sqz))
 
 	# Framework for 3D plotting
 	# fig = plt.figure()
@@ -79,7 +92,7 @@ def plot_points(x,y,z):
 	# ax.plot(np.ravel(x),np.ravel(y),np.ravel(z), '-ko', alpha=1)
 
 
-def cross_validation(x, y, z, k, p, l=1, method='ols'):
+def cross_validation(x, y, z, k, p, l=0, method='ols'):
 	kfold = KFold(n_splits = k, shuffle=True)
 	len_beta = int((p+1)*(p+2)/2)
 
@@ -110,10 +123,9 @@ def cross_validation(x, y, z, k, p, l=1, method='ols'):
 
 		# Compute model with train data from fold
 		X_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
-		if (method == 'ols'):
 
-			# beta_k = beta_ols(X_k, z_train_1d)
-			beta_k = beta_ridge(X_k, z_train_1d, l)
+		if (method == 'ols'):
+			beta_k = beta_ols(X_k, z_train_1d)
 
 			# Predict with trained model using test data from fold
 			X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p)
@@ -125,29 +137,22 @@ def cross_validation(x, y, z, k, p, l=1, method='ols'):
 			z_pred_train = X_train_k @ beta_k
 
 		if (method == 'ridge'):
-
 			X_mean = np.mean(X_k, axis=0)
-			X_k = X_k - X_mean
+			z_train_mean = np.mean(z_train_k)
 
-			z_test_k -= np.mean(z_train_k)
-			z_test_1d-= np.mean(z_train_k)
+			X_k = X_k - X_mean
+			z_test_k -= z_train_mean
+			z_test_1d-= z_train_mean
 
 			beta_k = beta_ridge(X_k, z_train_1d, l)
 
 			# Predict with trained model using test data from fold
-			X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p)
+			X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p) - X_mean
+			z_pred_test = X_test_k @ beta_k + z_train_mean
 
 			# Predict with trained model on train data
-			X_train_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
-
-			X_test_k -= X_mean
-			X_train_k -= X_mean
-
-			z_pred_test = X_test_k @ beta_k
-			z_pred_train = X_train_k @ beta_k
-
-			z_pred_test += np.mean(z_train_k)
-			z_pred_train += np.mean(z_train_k)
+			X_train_k = CreateDesignMatrix_X(x_train_k, y_train_k, p) - X_mean
+			z_pred_train = X_train_k @ beta_k + z_train_mean
 
 		# Compute error, bias, variance
 		error_test += np.mean((z_test_1d - z_pred_test)**2)

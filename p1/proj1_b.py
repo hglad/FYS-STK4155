@@ -1,4 +1,5 @@
 from proj1_funcs import *
+plt.rcParams.update({'font.size': 12})
 
 np.random.seed(10)
 # Make data

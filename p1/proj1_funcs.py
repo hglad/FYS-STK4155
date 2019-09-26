@@ -7,6 +7,7 @@ from random import random, seed
 import sklearn.metrics as metrics
 import sklearn.model_selection as mselect
 from sklearn.model_selection import KFold
+from sklearn import linear_model
 from imageio import imread
 
 
@@ -52,15 +53,15 @@ def DataImport(filename, sc=10):
 	return downscaled
 
 def plot_surf(x,y,z, color, alpha=1):
-	# if len(x.shape) != 2:
-	# 	sqx = int(np.sqrt(len(x)))
-	# 	x = np.reshape(x, (sqx, sqx))
-	# if len(y.shape) != 2:
-	# 	sqy = int(np.sqrt(len(y)))
-	# 	y = np.reshape(y, (sqy, sqy))
-	# if len(z.shape) != 2:
-	# 	sqz = int(np.sqrt(len(z)))
-	# 	z = np.reshape(z, (sqz, sqz))
+	if len(x.shape) != 2:
+		sqx = int(np.sqrt(len(x)))
+		x = np.reshape(x, (sqx, sqx))
+	if len(y.shape) != 2:
+		sqy = int(np.sqrt(len(y)))
+		y = np.reshape(y, (sqy, sqy))
+	if len(z.shape) != 2:
+		sqz = int(np.sqrt(len(z)))
+		z = np.reshape(z, (sqz, sqz))
 
 	# Framework for 3D plotting
 	# fig = plt.figure()
@@ -92,7 +93,7 @@ def plot_points(x,y,z):
 	# ax.plot(np.ravel(x),np.ravel(y),np.ravel(z), '-ko', alpha=1)
 
 
-def cross_validation(x, y, z, k, p, l=0, method='ols'):
+def cross_validation(x, y, z, k, p, param=0.1, method='ols'):
 	kfold = KFold(n_splits = k, shuffle=True)
 	len_beta = int((p+1)*(p+2)/2)
 
@@ -102,10 +103,9 @@ def cross_validation(x, y, z, k, p, l=0, method='ols'):
 	R2_sum = 0
 	MSE_test = 0
 	MSE_train = 0
+	var_beta = 0
+	beta_var = np.zeros(len_beta)
 	i = 0
-
-	z_preds_test_array = []
-	z_preds_train_array = []
 
 	for train_inds, test_inds in kfold.split(x):
 		x_train_k = x[train_inds]
@@ -118,8 +118,12 @@ def cross_validation(x, y, z, k, p, l=0, method='ols'):
 		z_test_k = z[test_inds]
 		z_test_1d = np.ravel(z_test_k)
 		"""!!!!"""
-		z_test_true = np.ravel(FrankeFunction(x_test_k, y_test_k))
+		# z_test_true = np.ravel(FrankeFunction(x_test_k, y_test_k))
 		"""!!!!"""
+		# z_train_k = np.reshape(z_train_k, (len(y_train_k), len(x_train_k)))
+		# print (z_train_k.shape)
+		# plt.imshow(z_train_k, cmap='gray')
+		# plt.show()
 
 		# Compute model with train data from fold
 		X_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
@@ -144,7 +148,7 @@ def cross_validation(x, y, z, k, p, l=0, method='ols'):
 			z_test_k -= z_train_mean
 			z_test_1d-= z_train_mean
 
-			beta_k = beta_ridge(X_k, z_train_1d, l)
+			beta_k = beta_ridge(X_k, z_train_1d, param)
 
 			# Predict with trained model using test data from fold
 			X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p) - X_mean
@@ -154,19 +158,27 @@ def cross_validation(x, y, z, k, p, l=0, method='ols'):
 			X_train_k = CreateDesignMatrix_X(x_train_k, y_train_k, p) - X_mean
 			z_pred_train = X_train_k @ beta_k + z_train_mean
 
+		if (method == 'lasso'):
+			model = linear_model.Lasso(alpha=param, max_iter=5000)
+			X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p)
+			X_train_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
+
+			z_ = np.ravel(z_train_k)
+			lasso = model.fit(X_train_k, z_)
+			z_pred_test = lasso.predict(X_test_k)
+			z_pred_train = lasso.predict(X_train_k)
+
 		# Compute error, bias, variance
 		error_test += np.mean((z_test_1d - z_pred_test)**2)
 		bias_test += np.mean( (z_test_1d - np.mean(z_pred_test))**2 )
 		var_test += np.var(z_pred_test)
-		z_preds_test_array.append(z_pred_test)
 
 		error_train += np.mean((z_train_1d - z_pred_train)**2)
 		bias_train += np.mean( (z_train_1d - np.mean(z_pred_train))**2 )
 		var_train += np.var(z_pred_train)
-		z_preds_train_array.append(z_pred_train)
 
 		# Compute R2 and MSE scoores
-		R2_sum += metrics.r2_score(z_test_true, z_pred_test)
+		R2_sum += metrics.r2_score(z_test_1d, z_pred_test)
 		MSE_test += metrics.mean_squared_error(z_test_1d, z_pred_test)
 		MSE_train += metrics.mean_squared_error(z_train_1d, z_pred_train)
 		i += 1
@@ -182,7 +194,7 @@ def cross_validation(x, y, z, k, p, l=0, method='ols'):
 def predict_poly_ols(x, y, z, p):
 	X = CreateDesignMatrix_X(x, y, p)
 	z_ = np.ravel(z)
-	beta = np.linalg.inv(np.dot(X.T, X)) .dot(X.T) .dot(z_)
+	beta = np.linalg.pinv(np.dot(X.T, X)) .dot(X.T) .dot(z_)
 	z_pred = X @ beta
 	return z_, z_pred
 
@@ -191,8 +203,16 @@ def predict_poly_ridge(x, y, z, p, l):
 	z_ = np.ravel(z)
 	m = len(X[0,:])
 	lmbd = l*np.eye(m)
-	beta = np.linalg.inv(np.dot(X.T, X) + lmbd) .dot(X.T) .dot(z_)
+	beta = np.linalg.pinv(np.dot(X.T, X) + lmbd) .dot(X.T) .dot(z_)
 	z_pred = X @ beta
+	return z_, z_pred
+
+def predict_lasso(x, y, z, p, alpha, max_iter=5000):
+	model = linear_model.Lasso(alpha=alpha, fit_intercept=True, max_iter=max_iter)
+	X = CreateDesignMatrix_X(x, y, p)
+	z_ = np.ravel(z)
+	lasso = model.fit(X, z_)
+	z_pred = lasso.predict(X)
 	return z_, z_pred
 
 

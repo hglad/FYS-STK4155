@@ -1,4 +1,5 @@
 from proj1_funcs import *
+plt.rcParams.update({'font.size': 12})
 
 np.random.seed(50)
 # Make data
@@ -15,7 +16,7 @@ x_train, x_test, y_train, y_test, z_train, z_test = mselect.train_test_split( x,
 # z_true_train = np.ravel(FrankeFunction(x_test,y_test))
 # z_true_test = np.ravel(FrankeFunction(x_test,y_test))
 
-max_p = 12
+max_p = 20
 num_lmbd = 100
 polys = range(max_p)
 l_ = np.logspace(np.log10(1e-4),np.log10(1e-3),num_lmbd)
@@ -36,6 +37,7 @@ var_test = np.zeros((max_p, len(l_)))
 error_train = np.zeros((max_p, len(l_)))
 bias_train = np.zeros((max_p, len(l_)))
 var_train = np.zeros((max_p, len(l_)))
+var_beta = np.zeros((max_p, len(l_)))
 z_test = np.ravel(z_test)
 
 # Perform cross-validation for different polynomial degrees
@@ -49,7 +51,7 @@ for i in range(1):
     for j in range(max_p):
         R2_scores[j,i], MSE_test[j,i], MSE_train[j,i], error_test[j,i], \
         bias_test[j,i], var_test[j,i], error_train[j,i], \
-        bias_train[j,i], var_train[j,i] = cross_validation(x, y, z, k=5, p=j, method='ols')
+        bias_train[j,i], var_train[j,i], var_beta[j,i] = cross_validation(x, y, z, k=5, p=j, method='ols')
 
 
 # Find lambda and polynomial that gives best MSE

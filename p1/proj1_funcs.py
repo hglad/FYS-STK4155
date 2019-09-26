@@ -118,7 +118,7 @@ def cross_validation(x, y, z, k, p, param=0.1, method='ols'):
 		z_test_k = z[test_inds]
 		z_test_1d = np.ravel(z_test_k)
 		"""!!!!"""
-		# z_test_true = np.ravel(FrankeFunction(x_test_k, y_test_k))
+		# z_test_1d = np.ravel(FrankeFunction(x_test_k, y_test_k))
 		"""!!!!"""
 		# z_train_k = np.reshape(z_train_k, (len(y_train_k), len(x_train_k)))
 		# print (z_train_k.shape)
@@ -196,6 +196,8 @@ def predict_poly_ols(x, y, z, p):
 	z_ = np.ravel(z)
 	beta = np.linalg.pinv(np.dot(X.T, X)) .dot(X.T) .dot(z_)
 	z_pred = X @ beta
+	# Variance of beta
+	var_beta = np.diag(np.linalg.pinv(np.dot(X.T, X)) * np.var(z_))
 	return z_, z_pred
 
 def predict_poly_ridge(x, y, z, p, l):
@@ -226,11 +228,45 @@ def beta_ridge(X, z, l):
 	beta = np.linalg.pinv( np.dot(X.T, X) + lmbd) .dot(X.T) .dot(z)
 	return beta
 
-def bias_var_error(z, z_pred):
-	error = np.mean((z - z_pred)**2)
-	bias = np.mean(z - np.mean(z_pred))
-	variance = np.var(z_pred)
-	return bias, variance, error
+def Franke_dataset(n, noise=0.5):
+	x = np.linspace(0, 1, n)
+	y = np.linspace(0, 1, n)
+	x, y = np.meshgrid(x,y)
+
+	eps = np.asarray([np.random.normal(0,noise,n*n)])
+	eps = np.reshape(eps, (n,n))
+	z = FrankeFunction(x,y) + eps
+
+	return x, y, z
+
+def CI(x, sigma, t=1.96):
+	CI_low = x - t*sigma
+	CI_high = x + t*sigma
+
+	plt.plot(range(len(x)), x)
+	plt.plot(range(len(x)), CI_low)
+	plt.plot(range(len(x)), CI_high)
+	plt.show()
+	# return CI_low, CI_high
+
+
+def plot_bias_var_err(polys, bias_test, var_test, MSE_test, bias_train, var_train, MSE_train):
+	plt.plot(polys, bias_test, '--b', label='bias (test)')
+	plt.plot(polys, var_test, '--r', label='variance (test)')
+	plt.plot(polys, MSE_test, '--g', label='MSE (test)')
+
+	plt.plot(polys, bias_train, '-b', label='bias (train')
+	plt.plot(polys, var_train, '-r', label='variance (train')
+	plt.plot(polys, MSE_train, '-g', label='MSE (train')
+
+	plt.legend()
+	plt.show()
+
+def plot_mse_train_test(polys, MSE_test, MSE_train):
+	plt.plot(polys, MSE_test, '--r', label='MSE (test)')
+	plt.plot(polys, MSE_train, '-b', label='MSE (train)')
+	plt.legend()
+	plt.show()
 
 
 #

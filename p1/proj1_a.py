@@ -18,16 +18,16 @@ p = 5
 len_beta = int((p+1)*(p+2)/2)
 X = CreateDesignMatrix_X(x, y, p)
 z_ = np.ravel(z)			# flattened array
-beta = np.linalg.inv( np.dot(X.T, X) ) .dot(X.T) .dot(z_)
+beta = np.linalg.pinv( np.dot(X.T, X) ) .dot(X.T) .dot(z_)
 
 # Create new points to predict using beta
-n_pred = 100
-x_pred = np.sort(np.random.rand(n_pred))
-y_pred = np.sort(np.random.rand(n_pred))
-x_pred, y_pred = np.meshgrid(x_pred,y_pred)
-
-X_pred = CreateDesignMatrix_X(x_pred, y_pred, p)
-z_pred_newpoints = X_pred @ beta
+# n_pred = 100
+# x_pred = np.sort(np.random.rand(n_pred))
+# y_pred = np.sort(np.random.rand(n_pred))
+# x_pred, y_pred = np.meshgrid(x_pred,y_pred)
+#
+# X_pred = CreateDesignMatrix_X(x_pred, y_pred, p)
+# z_pred_newpoints = X_pred @ beta
 
 # Plot the surface
 # plot_surf(x, y, z)

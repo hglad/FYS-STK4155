@@ -10,6 +10,7 @@ y = np.linspace(0,1,ny)
 x, y = np.meshgrid(x, y)
 print (len(x), len(y))
 
+
 # Normalize
 z = z/(np.max(z))
 # plt.show()

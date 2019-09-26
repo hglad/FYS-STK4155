@@ -65,12 +65,12 @@ print ("Param with best R2:", best_param)
 p = 20
 alpha = 2e-7
 max_iter = 5000     # for lasso
-
+method = 'ridge'
 # R2, MSE_test, MSE_train, error_test, bias_test, var_test, \
 # error_train, bias_train, var_train = cross_validation(x,y,z, k=5, p=best_poly, l=best_param, alpha=alpha, method='ridge')
 # print(R2, MSE_test, MSE_train)
 
-z_, z_pred  = predict_poly_ols(x, y, z, 39)
+z_, z_pred  = predict_poly(x, y, z, 39, method=method)
 # z_, z_pred = predict_poly_ridge(x,y,z, best_poly, best_param)
 # z_, z_pred = predict_lasso(x,y,z, best_poly, best_param, max_iter=5000)
 
@@ -83,7 +83,7 @@ z_pred = np.reshape(z_pred, (ny, nx))
 # plt.figure()
 # plt.imshow(z_pred, cmap='gray')
 
-plot_surf(x,y,z,color=cm.hot,alpha=0.25)
+# plot_surf(x,y,z,color=cm.hot,alpha=0.25)
 plot_points(x,y, z_pred)
 plt.show()
 

@@ -100,13 +100,10 @@ def cross_validation(x, y, z, k, p, param=0.1, method='ols'):
 	beta_array = np.zeros( (k, len_beta) )
 	error_test = bias_test = var_test = 0
 	error_train = bias_train = var_train = 0
-	R2_sum = 0
-	MSE_test = 0
-	MSE_train = 0
-	var_beta = 0
+	R2_sum = MSE_test = MSE_train = var_beta = 0
 	beta_var = np.zeros(len_beta)
-	i = 0
 
+	i = 0
 	for train_inds, test_inds in kfold.split(x):
 		x_train_k = x[train_inds]
 		y_train_k = y[train_inds]
@@ -125,10 +122,9 @@ def cross_validation(x, y, z, k, p, param=0.1, method='ols'):
 		# plt.imshow(z_train_k, cmap='gray')
 		# plt.show()
 
-		# Compute model with train data from fold
-		X_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
-
 		if (method == 'ols'):
+			# Compute model with train data from fold
+			X_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
 			beta_k = beta_ols(X_k, z_train_1d)
 
 			# Predict with trained model using test data from fold
@@ -141,6 +137,7 @@ def cross_validation(x, y, z, k, p, param=0.1, method='ols'):
 			z_pred_train = X_train_k @ beta_k
 
 		if (method == 'ridge'):
+			X_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
 			X_mean = np.mean(X_k, axis=0)
 			z_train_mean = np.mean(z_train_k)
 
@@ -159,7 +156,7 @@ def cross_validation(x, y, z, k, p, param=0.1, method='ols'):
 			z_pred_train = X_train_k @ beta_k + z_train_mean
 
 		if (method == 'lasso'):
-			model = linear_model.Lasso(alpha=param, max_iter=5000)
+			model = linear_model.Lasso(alpha=param, fit_intercept=False, max_iter=5000)
 			X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p)
 			X_train_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
 
@@ -174,13 +171,14 @@ def cross_validation(x, y, z, k, p, param=0.1, method='ols'):
 		var_test += np.var(z_pred_test)
 
 		error_train += np.mean((z_train_1d - z_pred_train)**2)
-		bias_train += np.mean( (z_train_1d - np.mean(z_pred_train))**2 )
-		var_train += np.var(z_pred_train)
+		# bias_train += np.mean( (z_train_1d - np.mean(z_pred_train))**2 )
+		# var_train += np.var(z_pred_train)
 
 		# Compute R2 and MSE scoores
 		R2_sum += metrics.r2_score(z_test_1d, z_pred_test)
 		MSE_test += metrics.mean_squared_error(z_test_1d, z_pred_test)
 		MSE_train += metrics.mean_squared_error(z_train_1d, z_pred_train)
+
 		i += 1
 
 	# Return mean of all MSEs for all folds
@@ -188,26 +186,9 @@ def cross_validation(x, y, z, k, p, param=0.1, method='ols'):
 	# var_train = np.mean(np.var(z_preds_train_array, axis=1, keepdims=True))
 
 	return R2_sum/k, MSE_test/k, MSE_train/k, error_test/k, \
-	bias_test/k, var_test/k, error_train/k, bias_train/k, var_train/k
+	bias_test/k, var_test/k, error_train/k
 
 # Create design matrix, find beta and predict
-def predict_poly_ols(x, y, z, p):
-	X = CreateDesignMatrix_X(x, y, p)
-	z_ = np.ravel(z)
-	beta = np.linalg.pinv(np.dot(X.T, X)) .dot(X.T) .dot(z_)
-	z_pred = X @ beta
-	# Variance of beta
-	var_beta = np.diag(np.linalg.pinv(np.dot(X.T, X)) * np.var(z_))
-	return z_, z_pred
-
-def predict_poly_ridge(x, y, z, p, l):
-	X = CreateDesignMatrix_X(x, y, p)
-	z_ = np.ravel(z)
-	m = len(X[0,:])
-	lmbd = l*np.eye(m)
-	beta = np.linalg.pinv(np.dot(X.T, X) + lmbd) .dot(X.T) .dot(z_)
-	z_pred = X @ beta
-	return z_, z_pred
 
 def predict_lasso(x, y, z, p, alpha, max_iter=5000):
 	model = linear_model.Lasso(alpha=alpha, fit_intercept=True, max_iter=max_iter)
@@ -217,6 +198,26 @@ def predict_lasso(x, y, z, p, alpha, max_iter=5000):
 	z_pred = lasso.predict(X)
 	return z_, z_pred
 
+def predict_poly(x, y, z, p, param=0, method='ols'):
+	X = CreateDesignMatrix_X(x, y, p)
+	z_ = np.ravel(z)
+
+	if (method == 'ols'):
+		beta = np.linalg.pinv(np.dot(X.T, X)) .dot(X.T) .dot(z_)
+		z_pred = X @ beta
+
+	if (method == 'ridge'):
+		m = len(X[0,:])
+		lmbd = param*np.eye(m)
+		beta = np.linalg.pinv(np.dot(X.T, X) + lmbd) .dot(X.T) .dot(z_)
+		z_pred = X @ beta
+
+	if (method == 'lasso'):
+		model = linear_model.Lasso(alpha=param, fit_intercept=False, max_iter=5000)
+		lasso = model.fit(X, z_)
+		z_pred = lasso.predict(X)
+
+	return z_, z_pred
 
 def beta_ols(X, z):
 	beta = np.linalg.pinv( np.dot(X.T, X)) .dot(X.T) .dot(z)
@@ -250,14 +251,12 @@ def CI(x, sigma, t=1.96):
 	# return CI_low, CI_high
 
 
-def plot_bias_var_err(polys, bias_test, var_test, MSE_test, bias_train, var_train, MSE_train):
+def plot_bias_var_err(polys, bias_test, var_test, MSE_test, MSE_train):
 	plt.plot(polys, bias_test, '--b', label='bias (test)')
-	plt.plot(polys, var_test, '--r', label='variance (test)')
-	plt.plot(polys, MSE_test, '--g', label='MSE (test)')
+	plt.plot(polys, var_test,  '--r', label='variance (test)')
 
-	plt.plot(polys, bias_train, '-b', label='bias (train')
-	plt.plot(polys, var_train, '-r', label='variance (train')
-	plt.plot(polys, MSE_train, '-g', label='MSE (train')
+	plt.plot(polys, MSE_test,  '--g', label='MSE (test)')
+	plt.plot(polys, MSE_train,  '-g', label='MSE (train)')
 
 	plt.legend()
 	plt.show()

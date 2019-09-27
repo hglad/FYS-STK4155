@@ -141,19 +141,16 @@ def cross_validation(x, y, z, k, p, param=0.1, method='ols', penalize_intercept=
 				z_train_k -= z_train_mean
 
 				# Predict with trained model using test data from fold
-				beta_k = beta_ridge(X_train_k, z_train_1d, param)
-				X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p) - X_mean
+				beta_k = beta_ridge(X_train_k, z_train_1d, param, len_beta)
+				X_test_k = X_test_k - X_mean
 				z_pred_test = X_test_k @ beta_k + z_train_mean
 
 				# Predict with trained model on train data
-				X_train_k = CreateDesignMatrix_X(x_train_k, y_train_k, p) - X_mean
+				X_train_k = X_train_k - X_mean
 				z_pred_train = X_train_k @ beta_k + z_train_mean
 			else:
-				beta_k = beta_ridge(X_train_k, z_train_1d, param)
-				X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p)
+				beta_k = beta_ridge(X_train_k, z_train_1d, param, len_beta)
 				z_pred_test = X_test_k @ beta_k
-
-				X_train_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
 				z_pred_train = X_train_k @ beta_k
 
 		if (method == 'lasso'):
@@ -200,8 +197,7 @@ def predict_poly(x, y, z, p, param=0, method='ols'):
 
 	return z_, z_pred
 
-def beta_ridge(X, z, l):
-	m = len(X[0,:])
+def beta_ridge(X, z, l, m):
 	lmbd = l*np.eye(m)
 	beta = np.linalg.pinv( np.dot(X.T, X) + lmbd) .dot(X.T) .dot(z)
 	return beta
@@ -217,7 +213,7 @@ def Franke_dataset(n, noise=0.5):
 
 	return x, y, z
 
-def CI(x, sigma, n, p, t=1.96):
+def CI(x, sigma, nx, ny, p, t=1.96):
 	CI_low = x - t*sigma
 	CI_high = x + t*sigma
 	plot_range = range(len(x))
@@ -234,7 +230,7 @@ def CI(x, sigma, n, p, t=1.96):
 		# plt.plot(CI_high[i], plot_range[i], 'bo')
 
 
-	plt.title('Confidence Interval for $\\beta$\n%d x %d grid, p = %d' % (n,n,p))
+	plt.title('Confidence Interval for $\\beta$\n%d x %d grid, p = %d' % (nx,ny,p))
 	plt.ylabel('i')
 	plt.xlabel('$\\beta_i$')
 	plt.show()
@@ -251,12 +247,12 @@ def plot_bias_var_err(polys, bias_test, var_test, MSE_test, MSE_train):
 	# plt.legend()
 	plt.show()
 
-def plot_mse_train_test(polys, MSE_test, MSE_train, params, n):
-	plt.plot(0,MSE_test[0,0], '-r')		# dummy plots for legend
-	plt.plot(0,MSE_test[0,0], '-b')
+def plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny):
+	plt.plot(polys[0],MSE_test[0,0], '-r')		# dummy plots for legend
+	plt.plot(polys[0],MSE_test[0,0], '-b')
 
 	plt.legend(['MSE (test data)', 'MSE (train data)'])
-	plt.title('MSE, Ordinary Least Squares\n%d x %d grid' % (n,n))
+	plt.title('MSE, Ordinary Least Squares\n%d x %d grid' % (nx,ny))
 	plt.xlabel('Complexity')
 	plt.ylabel('MSE')
 

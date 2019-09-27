@@ -37,10 +37,11 @@ def main(dataset='ridge',n=75,p=5,method='ols'):
 
         # Variance of beta
         var_beta = np.diag(np.linalg.pinv(np.dot(X.T, X)) * np.var(z_1d))
-        # CI for beta
-        # CI(beta, np.sqrt(var_beta))
 
-    # b) and c)
+        # CI for beta
+        CI(beta, np.sqrt(var_beta))
+
+    # Perform cross-validation with a given range of polynomials and parameters
     min_p = 0;  max_p = 20
     polys = range(min_p,max_p)
 
@@ -52,8 +53,12 @@ def main(dataset='ridge',n=75,p=5,method='ols'):
         var_test[j], error_train[j], bias_train[j], var_train[j] \
         = cross_validation(x, y, z, k=5, p=polys[j], param=1e-5, method=method)
 
-    plot_bias_var_err(polys, bias_test, var_test, MSE_test, bias_train, var_train, MSE_train)
+    # plot_bias_var_err(polys, bias_test, var_test, MSE_test, bias_train, var_train, MSE_train)
     plot_mse_train_test(polys, MSE_test, MSE_train)
 
 
 main()
+
+
+
+#

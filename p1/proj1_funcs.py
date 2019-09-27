@@ -263,8 +263,8 @@ def plot_bias_var_err(polys, bias_test, var_test, MSE_test, bias_train, var_trai
 	plt.show()
 
 def plot_mse_train_test(polys, MSE_test, MSE_train):
-	plt.plot(polys, MSE_test, '--r', label='MSE (test)')
-	plt.plot(polys, MSE_train, '-b', label='MSE (train)')
+	plt.plot(polys, MSE_test, '--r', label='MSE (test)', alpha=0.2)
+	plt.plot(polys, MSE_train, '-b', label='MSE (train)', alpha=0.2)
 	plt.legend()
 	plt.show()
 

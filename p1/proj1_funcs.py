@@ -9,7 +9,7 @@ import sklearn.model_selection as mselect
 from sklearn.model_selection import KFold
 from sklearn import linear_model
 from imageio import imread
-import sys as sys
+import sys
 
 
 def CreateDesignMatrix_X(x, y, p = 5):
@@ -119,10 +119,6 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 			z_true_test_1d = np.ravel(FrankeFunction(x_test_k, y_test_k))
 			z_true_train_1d = np.ravel(FrankeFunction(x_train_k, y_train_k))
 
-		# z_train_k = np.reshape(z_train_k, (len(y_train_k), len(x_train_k)))
-		# print (z_train_k.shape)
-		# plt.imshow(z_train_k, cmap='gray')
-		# plt.show()
 		X_test_k = CreateDesignMatrix_X(x_test_k, y_test_k, p)
 		X_train_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
 
@@ -156,7 +152,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 				z_pred_train = X_train_k @ beta_k
 
 		if (method == 'lasso'):
-			model = linear_model.Lasso(alpha=param, fit_intercept=False, tol=0.01, max_iter=10000)
+			model = linear_model.Lasso(alpha=param, fit_intercept=False, tol=0.01, max_iter=20000)
 			lasso = model.fit(X_train_k, z_train_1d)
 			z_pred_test = lasso.predict(X_test_k)
 			z_pred_train = lasso.predict(X_train_k)
@@ -257,5 +253,14 @@ def plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny):
 
 	plt.show()
 
+def plot_mse_poly_param(params, polys, MSE):
+	x, y = np.meshgrid(params,polys)
+	ax = plt.gca(projection='3d')
+
+	ax.plot_surface(x, y, MSE, cmap=cm.coolwarm)
+	ax.set_xlabel('Parameter')
+	ax.set_ylabel('Complexity')
+	ax.set_zlabel('MSE')
+	plt.show()
 
 #

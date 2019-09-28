@@ -152,7 +152,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 				z_pred_train = X_train_k @ beta_k
 
 		if (method == 'lasso'):
-			model = linear_model.Lasso(alpha=param, fit_intercept=False, tol=0.01, max_iter=20000)
+			model = linear_model.Lasso(alpha=param, warm_start=True, fit_intercept=False, tol=0.01, max_iter=20000)
 			lasso = model.fit(X_train_k, z_train_1d)
 			z_pred_test = lasso.predict(X_test_k)
 			z_pred_train = lasso.predict(X_train_k)

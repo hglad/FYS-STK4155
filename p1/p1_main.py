@@ -181,3 +181,9 @@ main(n=50,dataset='Terrain',method=sys.argv[3],p5_case=False)
 # Param with best MSE: 1.000e-04
 # MSE: 0.013852126084183047
 # R2: 0.5008935864756843
+
+# lasso [60, 70]
+# Polynomial degree with best MSE: 64
+# Param with best MSE: 5.000e-06
+# MSE: 0.012571913670866472
+# R2: 0.5467698141388012

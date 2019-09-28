@@ -52,8 +52,8 @@ def main(n,dataset,method,p5_case=False):
         # CI(beta, np.sqrt(var_beta), nx, ny, p=5)
 
     # Define ranges for complexity and parameters
-    min_p = 30;  max_p = 35
-    min_param = 1; max_param = 1e-2
+    min_p = 20;  max_p = 25
+    min_param = 1e-8; max_param = 1e-2
     # 5e-6 lowest param for terrain, lasso
     # 1e-5 lowest param for franke, lasso
     n_params = 5
@@ -70,28 +70,35 @@ def main(n,dataset,method,p5_case=False):
     error_train = (np.zeros((len(polys), n_params)) for i in range(8))
 
     # Perform cross-validation with given set of polynomials and parameters
-    for i in range(len(params)):
-        for j in range(len(polys)):
-            R2_scores[j,i], MSE_test[j,i], MSE_train[j,i], error_test[j,i],  bias_test[j,i], var_test[j,i], error_train[j,i] = cross_validation(x, y, z, k=5, p=polys[j], dataset=dataset, param=params[i], method=method)
-            print ("poly", j)
-        print ("param", i)
-
-    if (method == 'ols'):
-        poly_ind = np.argmin(MSE_test[:,0])
-        best_poly = polys[poly_ind]
-        best_param = 0      # just to assign a value
-        print ("Polynomial degree with best MSE:", best_poly)
-        print ("MSE:", MSE_test[poly_ind,0])
-        print("R2:", R2_scores[poly_ind,0])
-    else:
-        min_mse_coords = np.argwhere(MSE_test==MSE_test.min())
-        best_poly = polys[ min_mse_coords[0,0] ]
-        best_param = params[ min_mse_coords[0,1] ]
-        print ("MSE:", MSE_test[min_mse_coords])
-        print("R2:", R2_scores[min_mse_coords])
+    # for i in range(len(params)):
+    #     for j in range(len(polys)):
+    #         R2_scores[j,i], MSE_test[j,i], MSE_train[j,i], error_test[j,i],  bias_test[j,i], var_test[j,i], error_train[j,i] = cross_validation(x, y, z, k=5, p=polys[j], dataset=dataset, param=params[i], method=method)
+    #         print ("poly", j)
+    #     print ("param", i)
+    #
+    # if (method == 'ols'):
+    #     poly_ind = np.argmin(MSE_test[:,0])
+    #     best_poly = polys[poly_ind]
+    #     best_param = 0      # just to assign a value
+    #
+    #     print ("Polynomial degree with best MSE:", best_poly)
+    #     print ("MSE:", MSE_test[poly_ind,0])
+    #     print("R2:", R2_scores[poly_ind,0])
+    # else:
+    #     min_mse_coords = np.argwhere(MSE_test==MSE_test.min())
+    #     poly_ind = min_mse_coords[0,0]
+    #     param_ind = min_mse_coords[0,1]
+    #     best_poly = polys[ poly_ind ]
+    #     best_param = params[ param_ind ]
+    #
+    #     print ("Polynomial degree with best MSE:", best_poly)
+    #     print ("Param with best MSE: %1.3e" % best_param)
+    #     print ("MSE:", MSE_test[poly_ind, param_ind])
+    #     print("R2:", R2_scores[poly_ind, param_ind])
+    # end cross-validation
 
     # plot_bias_var_err(polys, bias_test, var_test, error_test, error_train)
-    plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny)
+    # plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny)
 
     # best_poly = 53
     # best_param = 1e-9
@@ -99,26 +106,19 @@ def main(n,dataset,method,p5_case=False):
     if (dataset == 'Franke'):
         z = FrankeFunction(x,y)
 
-    if (method != 'ols'):
-        print ("Param with best MSE: %1.3e" % best_param)
+    z_, z_pred = predict_poly(x,y,z,37,0,method)
 
-
-
-    z_, z_pred = predict_poly(x,y,z,best_poly,best_param,method)
-
-    # z_, z_pred = predict_poly(x,y,z,53,1e-9,method)
     z_pred_2d = np.reshape(z_pred, (ny,nx))
-    plot_surf(x,y,z,color=cm.terrain, alpha=0.35)
+    plot_surf(x,y,z,color=cm.coolwarm, alpha=0.25)
     plot_pred(x,y,z_pred_2d)
     plt.show()
 
-
-
+main(n=50,dataset='Terrain',method='ols',p5_case=False)
 
 # dataset = sys.argv[1]
 # method = sys.argv[2]
 
-main(n=50,dataset='Terrain',method='ols',p5_case=False)
+
 
 # mse_train vs mse_test plot:
 # np.random.seed(6)
@@ -130,28 +130,18 @@ main(n=50,dataset='Terrain',method='ols',p5_case=False)
 # noise = 0.65
 # main(dataset='Franke',n=50,method='ridge'), min_p = 0;  max_p = 15
 
-# lasso-test with polynomials [30,40,num=10], params [5e-6; 1e-2, num=5]
-# Polynomial degree with best MSE: 38
-# Param with best MSE: 5.000e-06
-# MSE: 0.012340358400887406
-# R2: 0.560904773744191
-
-# ols: [30, 35]
+# OLS: [30, 35]
 # Polynomial degree with best MSE: 32
-# MSE: 0.007970574165806672
-# R2: 0.7163906466061869
+# MSE: 0.008709927121078737
+# R2: 0.6834769846192777
 
-# ols: [35, 40]
+
+# OLS [35, 40]
 # Polynomial degree with best MSE: 37
-# MSE: 0.00794067282366778
-# R2: 0.7174545976005829
+# MSE: 0.008571487664039664
+# R2: 0.6886234877217973
 
-# ols: [45, 50]
-# Polynomial degree with best MSE: 47
-# MSE: 0.007760116472314368
-# R2: 0.7238791623801399
-
-# ols: [60, 65]
-# Polynomial degree with best MSE: 61
-# MSE: 0.007708717572210201
-# R2: 0.7257080405162009]
+# OLS [55, 60]
+# Polynomial degree with best MSE: 58
+# MSE: 0.009294122238973608
+# R2: 0.6590335437080858

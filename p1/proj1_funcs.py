@@ -73,7 +73,7 @@ def plot_surf(x,y,z, color, alpha=1):
 	ax.set_xlabel('$x$', fontsize=20)
 	ax.set_ylabel('$y$', fontsize=20)
 	ax.set_zlabel('$z$', fontsize=20)
-	surf = ax.plot_surface(x, y, z, cmap=color, linewidth=0, antialiased=False, alpha=alpha)
+	surf = ax.plot_surface(x, y, z, cmap=color, linewidth=0, antialiased=False, alpha=alpha, shade=True)
 
 	# Add a color bar which maps values to colors
 	fig.colorbar(surf, shrink=0.5, aspect=5)
@@ -91,7 +91,7 @@ def plot_pred(x,y,z):
 	# 	z = np.reshape(z, (sqz, sqz))
 
 	ax = plt.gca(projection='3d')
-	ax.plot_wireframe(x, y, z, ccount=20, rcount=20)
+	ax.plot_wireframe(x, y, z, ccount=10, rcount=10)
 	# ax.plot(np.ravel(x),np.ravel(y),np.ravel(z),'-ko')
 
 

@@ -55,7 +55,7 @@ def main(n,dataset,method,p5_case=False):
         # Variance of beta
         var_beta = np.diag(np.linalg.pinv(np.dot(X.T, X)) * np.var(z_1d))
         # CI for beta
-        # CI(beta, np.sqrt(var_beta), nx, ny, p=5)
+        CI(beta, np.sqrt(var_beta), nx, ny, p=5)
 
     # Define ranges for complexity and parameters
     min_p = int(sys.argv[1]);  max_p = int(sys.argv[2])
@@ -118,7 +118,7 @@ def main(n,dataset,method,p5_case=False):
         z = FrankeFunction(x,y)
 
     # perform prediction for given polynomial degree, hyperparameter
-    visualize_model(x,y,z, 45, 5e-6, method, z_full)
+    visualize_model(x,y,z, 45, 3e-6, method, z_full)
 
     # z_, z_pred = predict_poly(x,y,z,best_poly,best_param,method)
     # z_pred_2d = np.reshape(z_pred, (ny,nx))
@@ -127,8 +127,7 @@ def main(n,dataset,method,p5_case=False):
     # plt.show()
 
 
-main(n=50,dataset='Terrain',method=sys.argv[3],p5_case=False)
-
+main(n=50,dataset='Terrain',method=sys.argv[3],p5_case=True)
 
 # mse_train vs mse_test plot:
 # np.random.seed(6)

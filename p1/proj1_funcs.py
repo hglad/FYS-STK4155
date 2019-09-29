@@ -219,7 +219,7 @@ def CI(x, sigma, nx, ny, p, t=1.96):
 
 	for i in range(len(x)):
 		plt.plot([plot_range[i], plot_range[i]], CI_[i], '-ko', alpha=0.8, markersize=5)
-		plt.plot(plot_range[i], x[i], 'k|', markersize=10)
+		plt.plot(plot_range[i], x[i], 'k_', markersize=10)
 
 	# plt.title('Confidence Interval for $\\beta$\n%d x %d grid, p = %d' % (nx,ny,p))
 	plt.ylabel('Confidence Intervals')

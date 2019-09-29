@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from proj1_funcs import *
 
 plt.rcParams.update({'font.size': 14})
@@ -21,11 +19,13 @@ def main(n,dataset,method,p5_case=False):
     # Determine dataset to analyze
     if (dataset == 'Franke'):
         x, y, z = Franke_dataset(n, noise=0.5)
+        z_full = z
         nx = n
         ny = n
     else:
-        z = DataImport('Norway_1arc.tif', sc=20)
-        z = z/np.max(z)
+        z_full = DataImport('Norway_1arc.tif', sc=20)
+        z_full = z_full/np.max(z_full)
+        z = z_full/np.max(z_full)
         nx = len(z[0,:])
         ny = len(z[:,0])
         x = np.linspace(0,1,nx)
@@ -61,17 +61,18 @@ def main(n,dataset,method,p5_case=False):
     min_p = int(sys.argv[1]);  max_p = int(sys.argv[2])
     # min_param = float(sys.argv[3]); max_param = float(sys.argv[3])
 
-    # min_param = 1e-11; max_param = 1e-9     # ridge
-    min_param = 5e-6; max_param = 1e-4     # lasso
+    min_param = 1e-4; max_param = 1    # ridge
+    # min_param = 5e-5; max_param = 1     # lasso
     # 5e-6 lowest param for terrain, lasso
     # 1e-5 lowest param for franke, lasso
-    n_params = 5
+    n_params = 1
 
     if (method == 'ols'):
         n_params = 1   # only run once for OLS, parameter value does not matter
 
     polys = np.arange(min_p,max_p)
     params = np.logspace(np.log10(min_param), np.log10(max_param), n_params)
+    # params = np.linspace(min_param, max_param, n_params)
 
     # Initialize arrays
     R2_scores,MSE_test,MSE_train,MSE_best_cv,error_test,bias_test,var_test,\
@@ -106,21 +107,25 @@ def main(n,dataset,method,p5_case=False):
     print ("MSE:", MSE_test[poly_ind, param_ind])
     print("R2:", R2_scores[poly_ind, param_ind])
 
-    # plot_bias_var_err(polys, bias_test, var_test, error_test, error_train)
+    plot_bias_var_err(polys, bias_test, var_test, error_test, error_train)
     plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny)
     plot_mse_poly_param(params, polys, MSE_test)
+
+
 
     # Compare with true data if using Franke dataset
     if (dataset == 'Franke'):
         z = FrankeFunction(x,y)
 
     # perform prediction for given polynomial degree, hyperparameter
-    # z_, z_pred = predict_poly(x,y,z,37,0,method)
-    #
+    visualize_model(x,y,z, 45, 5e-6, method, z_full)
+
+    # z_, z_pred = predict_poly(x,y,z,best_poly,best_param,method)
     # z_pred_2d = np.reshape(z_pred, (ny,nx))
     # plot_surf(x,y,z,color=cm.coolwarm, alpha=0.25)
     # plot_pred(x,y,z_pred_2d)
     # plt.show()
+
 
 main(n=50,dataset='Terrain',method=sys.argv[3],p5_case=False)
 
@@ -130,7 +135,7 @@ main(n=50,dataset='Terrain',method=sys.argv[3],p5_case=False)
 # noise = 0.5
 # main(dataset='Franke',n=50,method='ols'), min_p = 0;  max_p = 15
 
-# mse_train vs mse_test plot (ridge):
+# mse_train vs mse_test plot (ridge):xxx
 # np.random.seed(10)
 # noise = 0.65
 # main(dataset='Franke',n=50,method='ridge'), min_p = 0;  max_p = 15
@@ -141,10 +146,10 @@ main(n=50,dataset='Terrain',method=sys.argv[3],p5_case=False)
 # R2: 0.6834769846192777
 
 """BEST OLS"""
-# OLS [35, 40]
-# Polynomial degree with best MSE: 37
-# MSE: 0.008571487664039664
-# R2: 0.6886234877217973
+# OLS [0, 60]
+# Polynomial degree with best MSE: 38
+# MSE: 0.008621307359604558
+# R2: 0.6898842799666649
 """"""
 # OLS [55, 60]
 # Polynomial degree with best MSE: 58
@@ -187,3 +192,23 @@ main(n=50,dataset='Terrain',method=sys.argv[3],p5_case=False)
 # Param with best MSE: 5.000e-06
 # MSE: 0.012571913670866472
 # R2: 0.5467698141388012
+
+# Polynomial degree with best MSE: 66
+# Param with best MSE: 8.071e-11
+# MSE: 0.00834214661413293
+# R2: 0.6980495909855442
+
+"""NEW BEST RIDGE"""
+# Polynomial degree with best MSE: 47
+# Param with best MSE: 4.642e-11
+# MSE: 0.008273389474111197
+# R2: 0.7044187720575833
+""""""
+
+
+"""BEST OLS (FRANKE)"""
+# Polynomial degree with best MSE: 7
+# Param with best MSE: 1.274e-04
+# MSE: 0.0048305148330908074
+# R2: 0.9344144243670373
+""""""

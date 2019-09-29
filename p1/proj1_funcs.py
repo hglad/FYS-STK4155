@@ -55,8 +55,10 @@ def Franke_dataset(n, noise=0.5):
 def DataImport(filename, sc=10):
 	# Load the terrain data
 	data = imread(filename)
+
 	# Scale the terrain data
 	downscaled = data[0::sc,0::sc]
+	print ("Dataset scaled from", data.shape, "to", downscaled.shape)
 
 	return downscaled
 
@@ -152,7 +154,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 				z_pred_train = X_train_k @ beta_k
 
 		if (method == 'lasso'):
-			model = linear_model.Lasso(alpha=param, warm_start=True, fit_intercept=False, tol=0.01, max_iter=20000)
+			model = linear_model.Lasso(alpha=param, fit_intercept=False, tol=0.01, max_iter=30000)
 			lasso = model.fit(X_train_k, z_train_1d)
 			z_pred_test = lasso.predict(X_test_k)
 			z_pred_train = lasso.predict(X_train_k)
@@ -225,31 +227,35 @@ def CI(x, sigma, nx, ny, p, t=1.96):
 	plt.show()
 
 def plot_bias_var_err(polys, bias_test, var_test, MSE_test, MSE_train):
-	plt.plot(polys, bias_test, '--b', label='bias (test)')
-	plt.plot(polys, var_test,  '--r', label='variance (test)')
+	plt.plot(polys[0],MSE_test[0,0], '-b')		# dummy plots for legend
+	plt.plot(polys[0],MSE_test[0,0], '-r')
+	plt.plot(polys[0],MSE_test[0,0], '-g')
+	plt.legend()
+	plt.xlabel('Complexity')
 
-	plt.plot(polys, MSE_test,  '--g', label='MSE (test)')
-	plt.plot(polys, MSE_train,  '-g', label='MSE (train)')
+	plt.plot(polys, bias_test, '-b', label='bias (test)')
+	plt.plot(polys, var_test,  '-r', label='variance (test)')
+	plt.plot(polys, MSE_test,  '-g', label='MSE (test)')
+	# plt.plot(polys, MSE_train,  '-g', label='MSE (train)')
 
-	# plt.legend()
 	plt.show()
 
 def plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny):
 	plt.plot(polys[0],MSE_test[0,0], '-r')		# dummy plots for legend
 	plt.plot(polys[0],MSE_test[0,0], '-b')
-
+	plt.tight_layout()
 	plt.legend(['MSE (test data)', 'MSE (train data)'])
 	# plt.title('MSE, Lasso Regression\n%d x %d grid' % (nx,ny))
 	plt.xlabel('Complexity')
 	plt.ylabel('MSE')
 
-	plt.plot(polys, MSE_test, '-r', label='MSE (test)',alpha=0.5)	# 0.5
-	plt.plot(polys, MSE_train, '-b', label='MSE (train)',alpha=0.3) # 0.3
+	plt.plot(polys, MSE_test, '-r', label='MSE (test)',alpha=1)	# 0.5
+	plt.plot(polys, MSE_train, '-b', label='MSE (train)',alpha=1) # 0.3
 
 	# Label the different plots with their lambda value
 	# plt.axis([0, polys[-1]+2, 0.23, 0.35])
 	# for i in range(len(params)):
-	# 	plt.text(polys[-1], MSE_test[-1][i], "$\\lambda$ = %1.1e" % params[i])
+	# 	plt.text(polys[ int(len(polys)/2)], MSE_test[-1][i], "$\\lambda$ = %1.1e" % params[i])
 
 	plt.show()
 
@@ -262,5 +268,24 @@ def plot_mse_poly_param(params, polys, MSE):
 	ax.set_ylabel('Complexity')
 	ax.set_zlabel('MSE')
 	plt.show()
+
+def visualize_model(x,y,z, poly, param, method, z_full):
+	nx = len(z[0,:])
+	ny = len(z[:,0])
+	z_, z_pred = predict_poly(x,y,z,poly,param,method)
+	z_pred_2d = np.reshape(z_pred, (ny,nx))
+
+	plt.figure()
+	plt.imshow(z_full, cmap=cm.terrain)
+	plt.colorbar()
+	plt.clim(0,1)
+
+	plt.figure()
+	plt.imshow(z_pred_2d, cmap=cm.terrain)
+	plt.colorbar()
+	plt.clim(0,1)
+
+	plt.show()
+
 
 #

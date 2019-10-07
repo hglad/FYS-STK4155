@@ -9,7 +9,7 @@ Then find the confidence interval of beta for p = 5.
 """
 def main():
     n = 50
-    dataset = 'Franke'
+    dataset = 'Franke'      # set to any other string to use terrain data
     method = sys.argv[3]
 
     if (method not in ['ols', 'ridge', 'lasso']):

@@ -10,9 +10,6 @@ from sklearn.model_selection import KFold
 from sklearn import linear_model
 from imageio import imread
 import sys
-import seaborn as sb
-import pandas as pd
-
 
 def CreateDesignMatrix_X(x, y, p = 5):
 	"""

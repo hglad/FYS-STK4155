@@ -10,6 +10,7 @@ from sklearn.model_selection import KFold
 from sklearn import linear_model
 from imageio import imread
 import sys
+import seaborn as sb
 
 
 def CreateDesignMatrix_X(x, y, p = 5):
@@ -62,45 +63,15 @@ def DataImport(filename, sc=10):
 
 	return downscaled
 
-def plot_surf(x,y,z, color, alpha=1):
-
-	# Framework for 3D plotting
-	fig = plt.figure()
-	ax = plt.gca(projection='3d')
-
-	# Customize the z-axis
-	# ax.set_zlim(-0.1, 1.4)
-	ax.zaxis.set_major_locator(LinearLocator(10))
-	ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-	ax.set_xlabel('$x$', fontsize=20)
-	ax.set_ylabel('$y$', fontsize=20)
-	ax.set_zlabel('$z$', fontsize=20)
-	surf = ax.plot_surface(x, y, z, cmap=color, linewidth=0, antialiased=False, alpha=alpha, shade=True)
-
-	# Add a color bar which maps values to colors
-	fig.colorbar(surf, shrink=0.5, aspect=5)
-
-def plot_pred(x,y,z):
-
-	# if len(x.shape) != 2:
-	# 	sqx = int(np.sqrt(len(x)))
-	# 	x = np.reshape(x, (sqx, sqx))
-	# if len(y.shape) != 2:
-	# 	sqy = int(np.sqrt(len(y)))
-	# 	y = np.reshape(y, (sqy, sqy))
-	# if len(z.shape) != 2:
-	# 	sqz = int(np.sqrt(len(z)))
-	# 	z = np.reshape(z, (sqz, sqz))
-
-	ax = plt.gca(projection='3d')
-	ax.plot_wireframe(x, y, z, ccount=10, rcount=10)
-	# ax.plot(np.ravel(x),np.ravel(y),np.ravel(z),'-ko')
-
 
 def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_intercept=False):
+	"""
+	Perform K-fold cross-validation given dataset, method for regression and
+	hyperparameter in the case of ridge or lasso.
+	"""
 	kfold = KFold(n_splits = k, shuffle=True)
 	len_beta = int((p+1)*(p+2)/2)
-
+	# Initialiation of variables
 	error_test = bias_test = var_test = 0
 	error_train = bias_train = var_train = 0
 	R2_sum = MSE_test = MSE_train = var_beta = 0
@@ -125,7 +96,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 		X_train_k = CreateDesignMatrix_X(x_train_k, y_train_k, p)
 
 		if (method == 'ols'):
-			beta_k = np.linalg.pinv( np.dot(X_train_k.T, X_train_k)) .dot(X_train_k.T) .dot(z_train_1d)
+			beta_k = beta_ols(X_train_k, z_train_1d)
 			z_pred_test = X_test_k @ beta_k
 			z_pred_train = X_train_k @ beta_k
 
@@ -202,6 +173,10 @@ def predict_poly(x, y, z, p, param=0, method='ols'):
 
 	return z_, z_pred
 
+def beta_ols(X, z):
+	beta = np.linalg.pinv( np.dot(X.T, X)) .dot(X.T) .dot(z)
+	return beta
+
 def beta_ridge(X, z, param, m):
 	lmbd = param*np.eye(m)
 	beta = np.linalg.pinv( np.dot(X.T, X) + lmbd) .dot(X.T) .dot(z)
@@ -225,6 +200,57 @@ def CI(x, sigma, nx, ny, p, t=1.96):
 	plt.ylabel('Confidence Intervals')
 	plt.xlabel('index', rotation=0)
 	plt.show()
+
+def UnitTest():
+	"""
+	Unit test to make sure that regular OLS gives the same results as ridge
+	regression with hyperparameter set to 0
+	"""
+	p = 5
+	len_beta = int((p+1)*(p+2)/2) # Number of elements in beta (!= p generally)
+
+	x,y,z = Franke_dataset(50,0)
+	X = CreateDesignMatrix_X(x,y,p)
+	z_1d = np.ravel(z)
+
+	B_OLS = beta_ols(X, z_1d)
+	B_Ridge = beta_ridge(X, z_1d, 0, len_beta)
+	eps = 1e-15
+	for i in range(len(B_OLS)):
+		assert B_OLS[i]-B_Ridge[i] < eps
+
+def plot_surf(x,y,z, color, alpha=1):
+	# Framework for 3D plotting
+	fig = plt.figure()
+	ax = plt.gca(projection='3d')
+
+	# Customize the z-axis
+	# ax.set_zlim(-0.1, 1.4)
+	ax.zaxis.set_major_locator(LinearLocator(10))
+	ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+	ax.set_xlabel('$x$', fontsize=20)
+	ax.set_ylabel('$y$', fontsize=20)
+	ax.set_zlabel('$z$', fontsize=20)
+	surf = ax.plot_surface(x, y, z, cmap=color, linewidth=0, antialiased=False, alpha=alpha, shade=True)
+
+	# Add a color bar which maps values to colors
+	fig.colorbar(surf, shrink=0.5, aspect=5)
+
+def plot_pred(x,y,z):
+
+	# if len(x.shape) != 2:
+	# 	sqx = int(np.sqrt(len(x)))
+	# 	x = np.reshape(x, (sqx, sqx))
+	# if len(y.shape) != 2:
+	# 	sqy = int(np.sqrt(len(y)))
+	# 	y = np.reshape(y, (sqy, sqy))
+	# if len(z.shape) != 2:
+	# 	sqz = int(np.sqrt(len(z)))
+	# 	z = np.reshape(z, (sqz, sqz))
+
+	ax = plt.gca(projection='3d')
+	ax.plot_wireframe(x, y, z, ccount=10, rcount=10)
+	# ax.plot(np.ravel(x),np.ravel(y),np.ravel(z),'-ko')
 
 def plot_bias_var_err(polys, bias_test, var_test, MSE_test, MSE_train):
 	plt.plot(polys[0],MSE_test[0,0], '-b')		# dummy plots for legend
@@ -268,6 +294,11 @@ def plot_mse_poly_param(params, polys, MSE):
 	ax.set_ylabel('Complexity')
 	ax.set_zlabel('MSE')
 	plt.show()
+
+def sb_heatmap(params, polys, MSE):
+	sb.heatmap(MSE)
+	plt.show()
+
 
 def visualize_model(x,y,z, poly, param, method, z_full):
 	nx = len(z[0,:])

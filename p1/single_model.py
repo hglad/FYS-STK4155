@@ -1,4 +1,4 @@
-from proj1_funcs import *
+from functions import *
 """
 Perform a single prediction using predict_poly on given dataset. Data is then
 visualized.
@@ -31,7 +31,7 @@ else:
 plot_surf(x,y,z,color=cm.coolwarm, alpha=1)
 plt.show()
 
-z_, z_pred = predict_poly(x,y,z,6, param=1.274e-4, method='ridge')
+z_, z_pred = predict_poly(x,y,z,6, param=1.247e-4, method='ridge')
 
 # PLot prediction
 z_pred = np.reshape(z_pred, (ny,nx))

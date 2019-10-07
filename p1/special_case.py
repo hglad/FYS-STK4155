@@ -1,4 +1,4 @@
-from proj1_funcs import *
+from functions import *
 
 """
 Calculate the confidence intervals for beta, where beta is acquired from

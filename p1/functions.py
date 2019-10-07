@@ -35,6 +35,7 @@ def CreateDesignMatrix_X(x, y, p = 5):
 
 	return X
 
+
 def FrankeFunction(x,y):
     term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
     term2 = 0.75*np.exp(-((9*x+1)**2)/49.  - 0.1*(9*y+1))
@@ -42,6 +43,7 @@ def FrankeFunction(x,y):
     term4 = -0.2*np.exp(-(9*x-4)**2        - (9*y-7)**2)
 
     return term1 + term2 + term3 + term4
+
 
 def Franke_dataset(n, noise=0.5):
 	x = np.linspace(0, 1, n)
@@ -53,6 +55,7 @@ def Franke_dataset(n, noise=0.5):
 	z = FrankeFunction(x,y) + eps
 
 	return x, y, z
+
 
 def DataImport(filename, sc=10):
 	# Load the terrain data
@@ -154,6 +157,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 	return R2_sum/k, MSE_test/k, MSE_train/k, error_test/k, \
 	bias_test/k, var_test/k, error_train/k
 
+
 # Create design matrix, find beta and predict
 def predict_poly(x, y, z, p, param=0, method='ols'):
 	X = CreateDesignMatrix_X(x, y, p)
@@ -176,14 +180,17 @@ def predict_poly(x, y, z, p, param=0, method='ols'):
 
 	return z_, z_pred
 
+
 def beta_ols(X, z):
 	beta = np.linalg.pinv( np.dot(X.T, X)) .dot(X.T) .dot(z)
 	return beta
+
 
 def beta_ridge(X, z, param, m):
 	lmbd = param*np.eye(m)
 	beta = np.linalg.pinv( np.dot(X.T, X) + lmbd) .dot(X.T) .dot(z)
 	return beta
+
 
 def CI(x, sigma, nx, ny, p, t=1.96):
 	"""
@@ -207,6 +214,7 @@ def CI(x, sigma, nx, ny, p, t=1.96):
 	plt.xlabel('index', rotation=0)
 	plt.show()
 
+
 def UnitTest():
 	"""
 	Unit test to make sure that regular OLS gives the same results as ridge
@@ -225,6 +233,7 @@ def UnitTest():
 	for i in range(len(B_OLS)):
 		assert B_OLS[i]-B_Ridge[i] < eps
 
+
 def plot_surf(x,y,z, color, alpha=1):
 	# Framework for 3D plotting
 	fig = plt.figure()
@@ -242,6 +251,7 @@ def plot_surf(x,y,z, color, alpha=1):
 	fig.colorbar(surf, shrink=0.5, aspect=5)
 
 def plot_bias_var_err(polys, bias_test, var_test, MSE_test, MSE_train):
+	# Plot bias, variance and MSE as function of model complexity.
 	plt.plot(polys[0],MSE_test[0,0], '-b')		# dummy plots for legend
 	plt.plot(polys[0],MSE_test[0,0], '-r')
 	plt.plot(polys[0],MSE_test[0,0], '-g')
@@ -251,11 +261,11 @@ def plot_bias_var_err(polys, bias_test, var_test, MSE_test, MSE_train):
 	plt.plot(polys, bias_test, '-b', label='bias (test)')
 	plt.plot(polys, var_test,  '-r', label='variance (test)')
 	plt.plot(polys, MSE_test,  '-g', label='MSE (test)')
-	# plt.plot(polys, MSE_train,  '-g', label='MSE (train)')
 
 	plt.show()
 
 def plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny):
+	# Plot train and test MSE as function of model complexity.
 	plt.plot(polys[0],MSE_test[0,0], '-r')		# dummy plots for legend
 	plt.plot(polys[0],MSE_test[0,0], '-b')
 	plt.tight_layout()

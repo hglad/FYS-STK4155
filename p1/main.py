@@ -103,10 +103,10 @@ def main(n,dataset,method,p5_case=False):
         z = FrankeFunction(x,y)
 
     # visualize model (or dataset) as a 2D heatmap
-    plot_heatmap(x,y,z)
+    terrain_2d(x,y,z)
 
-    # visualize model in 3D
-    plot_surf(x,y,z,color=cm.coolwarm, alpha=0.25)
+    # visualize model in 3D given colormap and transparency
+    plot_surf(x,y,z,color=cm.coolwarm, alpha=0.5)
     plt.show()
 
 

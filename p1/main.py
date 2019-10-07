@@ -23,7 +23,7 @@ def main():
 
     # Determine dataset to analyze
     if (dataset == 'Franke'):
-        x, y, z = Franke_dataset(n, noise=0.0)
+        x, y, z = Franke_dataset(n, noise=0.5)
         z_full = z
         nx = n
         ny = n
@@ -49,7 +49,7 @@ def main():
     if (method == 'ols'):
         n_params = 1   # only run once for OLS, parameter value does not matter
 
-    spacing = 'log'       
+    spacing = 'log'
     if (spacing == 'regular'):
         params = np.linspace(min_param, max_param, n_params)
     if (spacing == 'log'):

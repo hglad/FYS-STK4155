@@ -11,6 +11,7 @@ from sklearn import linear_model
 from imageio import imread
 import sys
 import seaborn as sb
+import pandas as pd
 
 
 def CreateDesignMatrix_X(x, y, p = 5):
@@ -101,6 +102,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 			z_pred_train = X_train_k @ beta_k
 
 		if (method == 'ridge'):
+			# Penalize_intercept attempts to remove the intercept. Not used.
 			if (penalize_intercept == True):
 				X_mean = np.mean(X_train_k, axis=0)
 				z_train_mean = np.mean(z_train_k)
@@ -125,6 +127,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 				z_pred_train = X_train_k @ beta_k
 
 		if (method == 'lasso'):
+			# Generate linear model using Lasso and perform predictions
 			model = linear_model.Lasso(alpha=param, fit_intercept=False, tol=0.01, max_iter=30000)
 			lasso = model.fit(X_train_k, z_train_1d)
 			z_pred_test = lasso.predict(X_test_k)
@@ -183,6 +186,10 @@ def beta_ridge(X, z, param, m):
 	return beta
 
 def CI(x, sigma, nx, ny, p, t=1.96):
+	"""
+	Compute 95% confidence interval (CI) for coefficients beta. Plot the
+	estimated beta values and their corresponding CIs.
+	"""
 	CI_low = x - t*sigma
 	CI_high = x + t*sigma
 	plot_range = range(len(x))
@@ -196,7 +203,6 @@ def CI(x, sigma, nx, ny, p, t=1.96):
 		plt.plot([plot_range[i], plot_range[i]], CI_[i], '-ko', alpha=0.8, markersize=5)
 		plt.plot(plot_range[i], x[i], 'k_', markersize=10)
 
-	# plt.title('Confidence Interval for $\\beta$\n%d x %d grid, p = %d' % (nx,ny,p))
 	plt.ylabel('Confidence Intervals')
 	plt.xlabel('index', rotation=0)
 	plt.show()
@@ -225,7 +231,6 @@ def plot_surf(x,y,z, color, alpha=1):
 	ax = plt.gca(projection='3d')
 
 	# Customize the z-axis
-	# ax.set_zlim(-0.1, 1.4)
 	ax.zaxis.set_major_locator(LinearLocator(10))
 	ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
 	ax.set_xlabel('$x$', fontsize=20)
@@ -235,22 +240,6 @@ def plot_surf(x,y,z, color, alpha=1):
 
 	# Add a color bar which maps values to colors
 	fig.colorbar(surf, shrink=0.5, aspect=5)
-
-def plot_pred(x,y,z):
-
-	# if len(x.shape) != 2:
-	# 	sqx = int(np.sqrt(len(x)))
-	# 	x = np.reshape(x, (sqx, sqx))
-	# if len(y.shape) != 2:
-	# 	sqy = int(np.sqrt(len(y)))
-	# 	y = np.reshape(y, (sqy, sqy))
-	# if len(z.shape) != 2:
-	# 	sqz = int(np.sqrt(len(z)))
-	# 	z = np.reshape(z, (sqz, sqz))
-
-	ax = plt.gca(projection='3d')
-	ax.plot_wireframe(x, y, z, ccount=10, rcount=10)
-	# ax.plot(np.ravel(x),np.ravel(y),np.ravel(z),'-ko')
 
 def plot_bias_var_err(polys, bias_test, var_test, MSE_test, MSE_train):
 	plt.plot(polys[0],MSE_test[0,0], '-b')		# dummy plots for legend
@@ -271,48 +260,47 @@ def plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny):
 	plt.plot(polys[0],MSE_test[0,0], '-b')
 	plt.tight_layout()
 	plt.legend(['MSE (test data)', 'MSE (train data)'])
-	# plt.title('MSE, Lasso Regression\n%d x %d grid' % (nx,ny))
+
 	plt.xlabel('Complexity')
 	plt.ylabel('MSE')
 
-	plt.plot(polys, MSE_test, '-r', label='MSE (test)',alpha=1)	# 0.5
-	plt.plot(polys, MSE_train, '-b', label='MSE (train)',alpha=1) # 0.3
-
-	# Label the different plots with their lambda value
-	# plt.axis([0, polys[-1]+2, 0.23, 0.35])
-	# for i in range(len(params)):
-	# 	plt.text(polys[ int(len(polys)/2)], MSE_test[-1][i], "$\\lambda$ = %1.1e" % params[i])
+	plt.plot(polys, MSE_test, '-r', label='MSE (test)',alpha=1)
+	plt.plot(polys, MSE_train, '-b', label='MSE (train)',alpha=1)
 
 	plt.show()
 
 def plot_mse_poly_param(params, polys, MSE):
 	x, y = np.meshgrid(params,polys)
-	ax = plt.gca(projection='3d')
-
-	ax.plot_surface(x, y, MSE, cmap=cm.coolwarm)
+	ax = plt.gca(projection='3d', figsize=(8,8))
+	fig = plt.figure(figsize=(6,6))
+	# ax.plot_surface(x, y, MSE, cmap=cm.coolwarm)
 	ax.set_xlabel('Parameter')
 	ax.set_ylabel('Complexity')
 	ax.set_zlabel('MSE')
 	plt.show()
 
-def sb_heatmap(params, polys, MSE):
-	sb.heatmap(MSE)
+def plot_heatmap(params, polys, MSE):
+	# plt.rcParams['figure.figsize'] = 8,8
+	plt.rcParams.update({'font.size': 16})
+	plt.imshow(MSE.T, cmap=cm.viridis)
+	plt.tight_layout()
+
+	ylabels = ['{:,.1e}'.format(i) for i in params]
+	plt.yticks(np.linspace(0, len(params)-1, len(params)), ylabels)
+	plt.xticks(np.arange(0, abs(polys[0]-polys[-1])+1, 1), polys)
+
+	cbar = plt.colorbar()
+	cbar.set_label('MSE')
+
+	plt.xlabel('Max. polynomial degree')
+	plt.ylabel('Hyperparameter')
+
 	plt.show()
 
 
-def visualize_model(x,y,z, poly, param, method, z_full):
-	nx = len(z[0,:])
-	ny = len(z[:,0])
-	z_, z_pred = predict_poly(x,y,z,poly,param,method)
-	z_pred_2d = np.reshape(z_pred, (ny,nx))
-
+def terrain_2d(x,y,z):
 	plt.figure()
-	plt.imshow(z_full, cmap=cm.terrain)
-	plt.colorbar()
-	plt.clim(0,1)
-
-	plt.figure()
-	plt.imshow(z_pred_2d, cmap=cm.terrain)
+	plt.imshow(z, cmap=cm.terrain)
 	plt.colorbar()
 	plt.clim(0,1)
 

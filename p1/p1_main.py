@@ -1,6 +1,6 @@
 from proj1_funcs import *
 
-plt.rcParams.update({'font.size': 14})
+# plt.rcParams.update({'font.size': 14})
 
 """
 The main file does the following tasks:
@@ -19,7 +19,7 @@ def main(n,dataset,method,p5_case=False):
 
     # Determine dataset to analyze
     if (dataset == 'Franke'):
-        x, y, z = Franke_dataset(n, noise=0.5)
+        x, y, z = Franke_dataset(n, noise=0.0)
         z_full = z
         nx = n
         ny = n
@@ -37,22 +37,22 @@ def main(n,dataset,method,p5_case=False):
 
     # Define ranges for complexity and parameters
     min_p = int(sys.argv[1]);  max_p = int(sys.argv[2])
-    # min_param = float(sys.argv[3]); max_param = float(sys.argv[3])
+    polys = np.arange(min_p,max_p)
 
-    min_param = 1e-4; max_param = 1    # ridge
+    min_param = 1e-6; max_param = 1e-1    # ridge
     # min_param = 5e-5; max_param = 1     # lasso
     # 5e-6 lowest param for terrain, lasso
     # 1e-5 lowest param for franke, lasso
-    n_params = 5
+    n_params = 10
 
     if (method == 'ols'):
         n_params = 1   # only run once for OLS, parameter value does not matter
 
-    polys = np.arange(min_p,max_p)
-    spacing = 'regular'
-    if (spacing == 'log'):
+
+    spacing = 'log'
+    if (spacing == 'regular'):
         params = np.linspace(min_param, max_param, n_params)
-    else:
+    if (spacing == 'log'):
         params = np.logspace(np.log10(min_param), np.log10(max_param), n_params)
 
     # Initialize arrays
@@ -68,10 +68,13 @@ def main(n,dataset,method,p5_case=False):
             sys.stdout.flush()
 
             R2_scores[j,i], MSE_test[j,i], MSE_train[j,i], error_test[j,i],  bias_test[j,i], var_test[j,i], error_train[j,i] = cross_validation(x, y, z, k=5, p=polys[j], dataset=dataset, param=params[i], method=method)
-    # end cross-validation
+
     print ("\n\n-----CV done-----")
 
-    # Find best polynomial degree and hyperparameter using best MSE score
+    """
+    Find best polynomial degree and hyperparameter using best MSE score. Code is
+    different for OLS because we do not have a hyperparameter in that case.
+    """
     if (method == 'ols'):
         poly_ind = np.argmin(MSE_test[:,0])
         best_poly = polys[poly_ind]
@@ -93,20 +96,18 @@ def main(n,dataset,method,p5_case=False):
     # plot_bias_var_err(polys, bias_test, var_test, error_test, error_train)
     # plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny)
     # plot_mse_poly_param(params, polys, MSE_test)
-    sb_heatmap(params, polys, MSE_test)
+    mse_heatmap(params, polys, MSE_test)
 
     # Compare with true data if using Franke dataset
     if (dataset == 'Franke'):
         z = FrankeFunction(x,y)
 
-    # perform prediction for given polynomial degree, hyperparameter
-    # visualize_model(x,y,z, 45, 3e-6, method, z_full)
+    # visualize model (or dataset) as a 2D heatmap
+    plot_heatmap(x,y,z)
 
-    # z_, z_pred = predict_poly(x,y,z,best_poly,best_param,method)
-    # z_pred_2d = np.reshape(z_pred, (ny,nx))
-    # plot_surf(x,y,z,color=cm.coolwarm, alpha=0.25)
-    # plot_pred(x,y,z_pred_2d)
-    # plt.show()
+    # visualize model in 3D
+    plot_surf(x,y,z,color=cm.coolwarm, alpha=0.25)
+    plt.show()
 
 UnitTest()
-main(n=50,dataset='Terrain',method=sys.argv[3],p5_case=True)
+main(n=50,dataset='Franke',method=sys.argv[3],p5_case=True)

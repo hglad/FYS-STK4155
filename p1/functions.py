@@ -13,8 +13,9 @@ import sys
 
 def CreateDesignMatrix_X(x, y, p = 5):
 	"""
-	Function for creating a design X-matrix with rows [1, x, y, x^2, xy, xy^2 , etc.]
-	Input is x and y mesh or raveled mesh, keyword agruments n is the degree of the polynomial you want to fit.
+	Function for creating a design X-matrix with rows [1, x, y, x^2, xy,
+	xy^2 , etc.]. Input is x and y mesh or raveled mesh, argument p is
+	the maximum polynomial degree in x and y.
 	"""
     # FLatten multidimensional array into one array
 	if len(x.shape) > 1:
@@ -43,6 +44,7 @@ def FrankeFunction(x,y):
 
 
 def Franke_dataset(n, noise=0.5):
+	# Generate dataset from Franke function with given noise
 	x = np.linspace(0, 1, n)
 	y = np.linspace(0, 1, n)
 	x, y = np.meshgrid(x,y)

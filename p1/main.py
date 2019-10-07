@@ -39,7 +39,7 @@ def main():
 
     z_1d = np.ravel(z)
 
-    # Define ranges for complexity and parameters
+    # Define ranges for complexity and hyperparameters
     min_p = int(sys.argv[1]);  max_p = int(sys.argv[2])
     polys = np.arange(min_p,max_p)
 
@@ -93,9 +93,7 @@ def main():
     print("R2:", R2_scores[poly_ind, param_ind])
 
     # Visualize results
-    # plot_bias_var_err(polys, bias_test, var_test, error_test, error_train)
-    # plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny)
-    # plot_mse_poly_param(params, polys, MSE_test)
+    plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny)
     plot_heatmap(params, polys, MSE_test)
 
     # Compare with true data if using Franke dataset

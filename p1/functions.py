@@ -247,20 +247,6 @@ def plot_surf(x,y,z, color, alpha=1):
 	# Add a color bar which maps values to colors
 	fig.colorbar(surf, shrink=0.5, aspect=5)
 
-def plot_bias_var_err(polys, bias_test, var_test, MSE_test, MSE_train):
-	# Plot bias, variance and MSE as function of model complexity.
-	plt.plot(polys[0],MSE_test[0,0], '-b')		# dummy plots for legend
-	plt.plot(polys[0],MSE_test[0,0], '-r')
-	plt.plot(polys[0],MSE_test[0,0], '-g')
-	plt.legend()
-	plt.xlabel('Complexity')
-
-	plt.plot(polys, bias_test, '-b', label='bias (test)')
-	plt.plot(polys, var_test,  '-r', label='variance (test)')
-	plt.plot(polys, MSE_test,  '-g', label='MSE (test)')
-
-	plt.show()
-
 def plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny):
 	# Plot train and test MSE as function of model complexity.
 	plt.plot(polys[0],MSE_test[0,0], '-r')		# dummy plots for legend
@@ -276,15 +262,6 @@ def plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny):
 
 	plt.show()
 
-def plot_mse_poly_param(params, polys, MSE):
-	x, y = np.meshgrid(params,polys)
-	ax = plt.gca(projection='3d', figsize=(8,8))
-	fig = plt.figure(figsize=(6,6))
-	# ax.plot_surface(x, y, MSE, cmap=cm.coolwarm)
-	ax.set_xlabel('Parameter')
-	ax.set_ylabel('Complexity')
-	ax.set_zlabel('MSE')
-	plt.show()
 
 def plot_heatmap(params, polys, MSE):
 	# plt.rcParams['figure.figsize'] = 8,8

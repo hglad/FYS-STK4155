@@ -1,4 +1,8 @@
 from proj1_funcs import *
+"""
+Perform a single prediction using predict_poly on given dataset. Data is then
+visualized.
+"""
 
 dataset = 'Franke'
 
@@ -10,6 +14,10 @@ if (dataset == 'Franke'):
     nx = n
     ny = n
 else:
+    """
+    Get real terrain data and reshape it. Normalize so that values are between
+    0 and 1 for x,y,z.
+    """
     z_full = DataImport('Norway_1arc.tif', sc=20)
     z_full = z_full/np.max(z_full)
     z = z_full/np.max(z_full)
@@ -26,6 +34,6 @@ plt.show()
 z_, z_pred = predict_poly(x,y,z,6, param=1.274e-4, method='ridge')
 
 # PLot prediction
-z_pred = np.reshape(z_pred, (nx,ny))
+z_pred = np.reshape(z_pred, (ny,nx))
 plot_surf(x,y,z_pred,color=cm.coolwarm, alpha=1)
 plt.show()

@@ -96,7 +96,7 @@ def main(n,dataset,method,p5_case=False):
     # plot_bias_var_err(polys, bias_test, var_test, error_test, error_train)
     # plot_mse_train_test(polys, MSE_test, MSE_train, params, nx, ny)
     # plot_mse_poly_param(params, polys, MSE_test)
-    mse_heatmap(params, polys, MSE_test)
+    plot_heatmap(params, polys, MSE_test)
 
     # Compare with true data if using Franke dataset
     if (dataset == 'Franke'):
@@ -109,5 +109,7 @@ def main(n,dataset,method,p5_case=False):
     plot_surf(x,y,z,color=cm.coolwarm, alpha=0.25)
     plt.show()
 
-UnitTest()
-main(n=50,dataset='Franke',method=sys.argv[3],p5_case=True)
+
+if __name__ == '__main__':
+    UnitTest()
+    main(n=50,dataset='Franke',method=sys.argv[3],p5_case=True)

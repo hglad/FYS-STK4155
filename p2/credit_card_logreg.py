@@ -9,6 +9,7 @@ def main():
     X = df.loc[:, df.columns != 'defaultPaymentNextMonth'].values
     # target variable: if customer defaults or not
     y = df.loc[:, df.columns == 'defaultPaymentNextMonth'].values
+    y = y[:,0]
 
     print (df.head())
     ncols = X.shape[1]
@@ -24,12 +25,14 @@ def main():
     # Split into train and test data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
 
-    print (X)
-
-    logreg_sklearn(X_train, X_test, y_train, y_test)
+    # logreg_sklearn(X_train, X_test, y_train, y_test)
+    my_logreg(X_train, X_test, y_train, y_test)
 
 if __name__ == '__main__':
     main()
+
+
+
 
 
 #

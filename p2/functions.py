@@ -34,7 +34,49 @@ def logreg_sklearn(X_train, X_test, y_train, y_test):
 
     return
 
-def my_logreg(X_train, X_test, y_train, y_test):
-    X_train_e =
 
-    return
+def prob(x, weights):
+    t = np.dot(x, weights)          # weighted quantities
+    sg = 1./(1 + np.exp(-t))        # sigmoid
+    return sg
+
+
+def my_logreg(X_train, X_test, y_train, y_test):
+    np.random.seed(1)
+    success = [1 for i in y_train if i==1]
+    fail    = [0 for i in y_train if i==0]
+
+    # X_train[samples, features]
+    n = len(X_train[:,0])                    # number of training samples
+    m = len(X_train[0,:])                    # number of features
+
+    weights = np.random.uniform(-0.0001,0.0001,m) # random initial weights
+    p = prob(X_train, weights)        # weighted probabilities
+
+    tot_cost = -(1./n)*np.sum( y_train*np.log(p) + (1 - y_train)*np.log(1 - np.log(p)))
+    print (tot_cost)
+
+    # Predict using random weights
+    predict = prob(X_test, weights)
+    y_pred = (predict >= 0.5).astype(int)
+    accuracy = np.mean(y_pred == y_test)
+    diff = y_test-y_pred
+
+    print ("Accuracy:", accuracy)
+    print ("Correctly classified:", np.sum(diff==0))
+    print ("Default classified as non-default:", np.sum(diff==1))
+    print ("Non-default classified as default:", np.sum(diff==-1))
+
+    # Confusion matrix of predicted vs. true classes
+    conf_matrix = metrics.confusion_matrix(y_test, y_pred)
+    sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
+    plt.title('Confusion matrix (default = 1)')
+    plt.ylabel('True value')
+    plt.xlabel('Predicted value')
+    plt.show()
+
+
+
+
+
+#

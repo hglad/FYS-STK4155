@@ -11,17 +11,20 @@ def main():
     y = df.loc[:, df.columns == 'defaultPaymentNextMonth'].values
     y = y[:,0]
 
+    # X = X[:, 10:-1]
+
     print (df.head())
     ncols = X.shape[1]
 
     # Categorical variables to one-hots
     onehotencoder = OneHotEncoder(categories="auto")
 
-    # X = ColumnTransformer(
-    #     [("", onehotencoder, [3]),],
-    #     remainder="passthrough"
-    # ).fit_transform(X)
+    X = ColumnTransformer(
+        [("", onehotencoder, [3]),],
+        remainder="passthrough"
+    ).fit_transform(X)
 
+    # print (X)
     # Split into train and test data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
 

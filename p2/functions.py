@@ -9,6 +9,9 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score
 from sklearn.linear_model import LogisticRegression
 from sklearn import metrics
+from scipy.optimize import fmin_tnc
+
+np.random.seed(1)
 
 def logreg_sklearn(X_train, X_test, y_train, y_test):
     # Create regressor
@@ -35,29 +38,67 @@ def logreg_sklearn(X_train, X_test, y_train, y_test):
     return
 
 
-def prob(x, weights):
-    t = np.dot(x, weights)          # weighted quantities
-    sg = 1./(1 + np.exp(-t))        # sigmoid
+def prob(x, beta):
+    t = np.dot(x, beta)          # weighted quantities
+    sg = 1./(1 + np.exp(-t))     # sigmoid
     return sg
 
 
+def total_cost(n, y, p, beta):
+    # tot_cost = -(1./n)*np.sum( y_train*np.log(p) + (1 - y_train)*np.log(1 - np.log(p)))
+    tot_cost = -np.sum(y*beta - np.log(1 + np.exp(y*beta)))
+    return tot_cost
+
+
+def gradient(m, x, y, beta):
+    # print (np.sum( prob(x, beta)))
+    exp = np.exp( prob(x,beta) )
+    p = exp/(1+exp)#*(1 - exp/(1+exp))
+
+    return -np.dot(x.T, (y - p))
+    # return (1/m) * np.dot(x.T, prob(x,beta) - y)
+
+
+def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
+    # Standard gradient descent
+    m = x.shape[1]
+    grad = gradient(m, x, y, beta)
+    gamma_0 = gamma
+    for i in range(iters):
+        new_beta = beta - grad*gamma
+        grad = gradient(m, x, y, new_beta)
+        norm = np.linalg.norm(new_beta - beta)
+        mean_diff = np.mean(abs(new_beta - beta))
+
+        beta = new_beta
+
+    print (norm, gamma)
+    return beta, norm
+
+
 def my_logreg(X_train, X_test, y_train, y_test):
-    np.random.seed(1)
-    success = [1 for i in y_train if i==1]
-    fail    = [0 for i in y_train if i==0]
+    # success = [1 for i in y_train if i==1]
+    # fail    = [0 for i in y_train if i==0]
 
-    # X_train[samples, features]
-    n = len(X_train[:,0])                    # number of training samples
-    m = len(X_train[0,:])                    # number of features
+    # X[samples, features]
+    n = X_train.shape[0]                    # number of training samples
+    m = X_train.shape[1]                   # number of features
+    iters = 3000
+    gamma = 1e-11
+    beta_0 = np.random.uniform(-1,1,m)         # random initial weights
+    opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters, gamma)
+    """
+    norm = 1
+    while (norm > 1e-3):
+        gamma = 1e-10
+        beta = np.random.uniform(-1,1,m)
+        opt_beta, norm = gradient_descent(X_train, beta, y_train, iters=5000, gamma=gamma)
+    """
 
-    weights = np.random.uniform(-0.0001,0.0001,m) # random initial weights
-    p = prob(X_train, weights)        # weighted probabilities
-
-    tot_cost = -(1./n)*np.sum( y_train*np.log(p) + (1 - y_train)*np.log(1 - np.log(p)))
-    print (tot_cost)
-
-    # Predict using random weights
-    predict = prob(X_test, weights)
+    # Predict using optimal weights
+    print (beta_0)
+    print (opt_beta)
+    predict = prob(X_test, opt_beta)     # values between 0 and 1
     y_pred = (predict >= 0.5).astype(int)
     accuracy = np.mean(y_pred == y_test)
     diff = y_test-y_pred
@@ -69,10 +110,13 @@ def my_logreg(X_train, X_test, y_train, y_test):
 
     # Confusion matrix of predicted vs. true classes
     conf_matrix = metrics.confusion_matrix(y_test, y_pred)
-    sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
+    sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu", fmt='g')
     plt.title('Confusion matrix (default = 1)')
     plt.ylabel('True value')
     plt.xlabel('Predicted value')
+    plt.show()
+
+    plt.plot(opt_beta, '-ro')
     plt.show()
 
 

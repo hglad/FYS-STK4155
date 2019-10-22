@@ -51,12 +51,12 @@ def total_cost(n, y, p, beta):
 
 
 def gradient(m, x, y, beta):
-    # print (np.sum( prob(x, beta)))
     exp = np.exp( prob(x,beta) )
     p = exp/(1+exp)#*(1 - exp/(1+exp))
-
     return -np.dot(x.T, (y - p))
+
     # return (1/m) * np.dot(x.T, prob(x,beta) - y)
+
 
 
 def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
@@ -64,15 +64,16 @@ def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
     m = x.shape[1]
     grad = gradient(m, x, y, beta)
     gamma_0 = gamma
+
     for i in range(iters):
         new_beta = beta - grad*gamma
         grad = gradient(m, x, y, new_beta)
         norm = np.linalg.norm(new_beta - beta)
         mean_diff = np.mean(abs(new_beta - beta))
-
+        print (norm)
         beta = new_beta
 
-    print (norm, gamma)
+    # print (norm, gamma)
     return beta, norm
 
 
@@ -82,11 +83,12 @@ def my_logreg(X_train, X_test, y_train, y_test):
 
     # X[samples, features]
     n = X_train.shape[0]                    # number of training samples
-    m = X_train.shape[1]                   # number of features
-    iters = 3000
-    gamma = 1e-11
-    beta_0 = np.random.uniform(-1,1,m)         # random initial weights
+    m = X_train.shape[1]                    # number of features
+    iters = 5000
+    gamma = 5e-3
+    beta_0 = np.random.uniform(-100,100,m)         # random initial weights
     opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters, gamma)
+
     """
     norm = 1
     while (norm > 1e-3):
@@ -98,10 +100,11 @@ def my_logreg(X_train, X_test, y_train, y_test):
     # Predict using optimal weights
     print (beta_0)
     print (opt_beta)
+
     predict = prob(X_test, opt_beta)     # values between 0 and 1
     y_pred = (predict >= 0.5).astype(int)
     accuracy = np.mean(y_pred == y_test)
-    diff = y_test-y_pred
+    diff = y_test - y_pred
 
     print ("Accuracy:", accuracy)
     print ("Correctly classified:", np.sum(diff==0))
@@ -117,6 +120,9 @@ def my_logreg(X_train, X_test, y_train, y_test):
     plt.show()
 
     plt.plot(opt_beta, '-ro')
+    plt.show()
+
+    plt.plot(y_pred, '-bo')
     plt.show()
 
 

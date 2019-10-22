@@ -11,8 +11,6 @@ def main():
     y = df.loc[:, df.columns == 'defaultPaymentNextMonth'].values
     y = y[:,0]
 
-    # X = X[:, 10:-1]
-
     print (df.head())
     ncols = X.shape[1]
 
@@ -24,15 +22,38 @@ def main():
         remainder="passthrough"
     ).fit_transform(X)
 
-    # print (X)
+    print (X)
     # Split into train and test data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
 
     # logreg_sklearn(X_train, X_test, y_train, y_test)
     my_logreg(X_train, X_test, y_train, y_test)
 
+def main2():
+    infile = open('marks.txt', 'r')
+
+    n = 0
+    for line in infile:
+        n += 1
+
+    X = np.ones((n,3))
+    y = np.zeros(n)
+
+    i = 0
+    infile = open('marks.txt', 'r')
+    for line in infile:
+        split = line.split(',')
+        X[i,1], X[i,2], y[i] = split[0], split[1], split[2]
+        i += 1
+
+    # Split into train and test data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=123)
+    
+    my_logreg(X_train, X_test, y_train, y_test)
+    # logreg_sklearn(X_train, X_test, y_train, y_test)
+
 if __name__ == '__main__':
-    main()
+    main2()
 
 
 

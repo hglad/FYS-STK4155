@@ -58,22 +58,28 @@ def gradient(m, x, y, beta):
     # return (1/m) * np.dot(x.T, prob(x,beta) - y)
 
 
-
 def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
     # Standard gradient descent
     m = x.shape[1]
-    grad = gradient(m, x, y, beta)
     gamma_0 = gamma
-
     for i in range(iters):
+        grad = gradient(m, x, y, beta)
         new_beta = beta - grad*gamma
-        grad = gradient(m, x, y, new_beta)
-        norm = np.linalg.norm(new_beta - beta)
-        mean_diff = np.mean(abs(new_beta - beta))
-        print (norm)
-        beta = new_beta
 
-    # print (norm, gamma)
+        norm = np.linalg.norm(new_beta - beta)
+
+        # if (abs(norm) < 1e-12):
+        #     gamma *= 1.01
+        if (abs(norm) > 0):
+            gamma *= 0.99
+
+        beta = new_beta
+        print (norm)
+        if (norm < 1e-10):
+            print (norm, gamma)
+            return beta, norm
+
+    print (norm, gamma)
     return beta, norm
 
 
@@ -84,46 +90,44 @@ def my_logreg(X_train, X_test, y_train, y_test):
     # X[samples, features]
     n = X_train.shape[0]                    # number of training samples
     m = X_train.shape[1]                    # number of features
-    iters = 5000
-    gamma = 5e-3
-    beta_0 = np.random.uniform(-100,100,m)         # random initial weights
-    opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters, gamma)
+    iters = 100000
+    gamma = 1e-8
+    beta_0 = np.random.uniform(-10000,10000,m)         # random initial weights
+    # opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters, gamma)
 
-    """
-    norm = 1
-    while (norm > 1e-3):
-        gamma = 1e-10
-        beta = np.random.uniform(-1,1,m)
-        opt_beta, norm = gradient_descent(X_train, beta, y_train, iters=5000, gamma=gamma)
-    """
+    params = np.logspace(np.log10(1e-5), np.log10(1e-4), 1)
 
-    # Predict using optimal weights
-    print (beta_0)
-    print (opt_beta)
+    for gamma in params:
+        beta_0 = np.random.uniform(-1,1,m)
+        opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters=iters, gamma=gamma)
 
-    predict = prob(X_test, opt_beta)     # values between 0 and 1
-    y_pred = (predict >= 0.5).astype(int)
-    accuracy = np.mean(y_pred == y_test)
-    diff = y_test - y_pred
+        # Predict using optimal weights
+        print ("Initial beta:", beta_0)
+        print ("Optimal beta:", opt_beta)
 
-    print ("Accuracy:", accuracy)
-    print ("Correctly classified:", np.sum(diff==0))
-    print ("Default classified as non-default:", np.sum(diff==1))
-    print ("Non-default classified as default:", np.sum(diff==-1))
+        predict = prob(X_test, opt_beta)     # values between 0 and 1
+        y_pred = (predict >= 0.5).astype(int)
+        accuracy = np.mean(y_pred == y_test)
+        diff = y_test - y_pred
 
-    # Confusion matrix of predicted vs. true classes
-    conf_matrix = metrics.confusion_matrix(y_test, y_pred)
-    sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu", fmt='g')
-    plt.title('Confusion matrix (default = 1)')
-    plt.ylabel('True value')
-    plt.xlabel('Predicted value')
-    plt.show()
+        print ("Accuracy:", accuracy)
+        print ("Correctly classified:", np.sum(diff==0))
+        print ("Default classified as non-default:", np.sum(diff==1))
+        print ("Non-default classified as default:", np.sum(diff==-1))
 
-    plt.plot(opt_beta, '-ro')
-    plt.show()
+        # Confusion matrix of predicted vs. true classes
+        conf_matrix = metrics.confusion_matrix(y_test, y_pred)
+        sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu", fmt='g')
+        plt.title('Confusion matrix (default = 1)')
+        plt.ylabel('True value')
+        plt.xlabel('Predicted value')
+        plt.show()
 
-    plt.plot(y_pred, '-bo')
-    plt.show()
+        # plt.plot(opt_beta, '-ro')
+        # plt.show()
+        #
+        # plt.plot(y_pred, '-bo')
+        # plt.show()
 
 
 

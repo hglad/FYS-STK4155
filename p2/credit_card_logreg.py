@@ -31,7 +31,6 @@ def main():
 
 def main2():
     infile = open('marks.txt', 'r')
-
     n = 0
     for line in infile:
         n += 1
@@ -46,15 +45,20 @@ def main2():
         X[i,1], X[i,2], y[i] = split[0], split[1], split[2]
         i += 1
 
+
     # Split into train and test data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=123)
-    
+
     my_logreg(X_train, X_test, y_train, y_test)
     # logreg_sklearn(X_train, X_test, y_train, y_test)
 
 if __name__ == '__main__':
     main2()
 
+# marks.txt data: 100 % accuracy, random_state=123, test_size=0.3
+    # iters = 50000
+    # gamma = 5e-2
+    # beta_0 = np.random.uniform(-10000,10000,m)         # random initial weights
 
 
 

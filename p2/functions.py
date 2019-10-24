@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import seaborn as sb
+import sys
 import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
@@ -38,22 +39,22 @@ def logreg_sklearn(X_train, X_test, y_train, y_test):
     return
 
 
-def prob(x, beta):
-    t = np.dot(x, beta)          # weighted quantities
-    sg = 1./(1 + np.exp(-t))     # sigmoid
-    return sg
-
-
 def total_cost(n, y, p, beta):
     # tot_cost = -(1./n)*np.sum( y_train*np.log(p) + (1 - y_train)*np.log(1 - np.log(p)))
     tot_cost = -np.sum(y*beta - np.log(1 + np.exp(y*beta)))
     return tot_cost
 
 
+def prob(x, beta):
+    t = np.dot(x, beta)          # weighted quantities
+    sg = 1./(1 + np.exp(-t))     # sigmoid
+    return sg
+
+
 def gradient(m, x, y, beta):
     # exp = np.exp( prob(x,beta) )
     # exp = np.exp(x @ beta)
-    p = 1./(1+np.exp(-x@beta))
+    p = 1./(1 + np.exp(-x@beta))        # activation function
     # p = 1./(1+exp)
     # p = exp/(1+exp)#*(1 - exp/(1+exp))
 
@@ -79,10 +80,10 @@ def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
         beta = new_beta
         # print (norm)
         if (norm < 1e-10):
-            print (norm, gamma)
+            # print (norm, gamma)
             return beta, norm
 
-    print (norm, gamma)
+    # print (norm, gamma)
     return beta, norm
 
 
@@ -94,12 +95,12 @@ def my_logreg(X_train, X_test, y_train, y_test):
     n = X_train.shape[0]                    # number of training samples
     m = X_train.shape[1]                    # number of features
     # m = len(X[0])
-    iters = 1000
+    iters = 500000
     # gamma = 1e-8
     # beta_0 = np.random.uniform(-10000,10000,m)         # random initial weights
     # opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters, gamma)
 
-    params = np.logspace(np.log10(1e-3), np.log10(1e-4), 1)
+    params = np.logspace(np.log10(1e-6), np.log10(1e0), 7)
 
     for gamma in params:
         beta_0 = np.random.uniform(-10,10,m)
@@ -107,26 +108,27 @@ def my_logreg(X_train, X_test, y_train, y_test):
         opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters=iters, gamma=gamma)
 
         # Predict using optimal weights
-        print ("Initial beta:", beta_0)
-        print ("Optimal beta:", opt_beta)
+        # print ("Initial beta:", beta_0)
+        # print ("Optimal beta:", opt_beta)
 
         predict = prob(X_test, opt_beta)      # values between 0 and 1
         y_pred = (predict >= 0.5).astype(int) # convert to 0 or 1
         accuracy = np.mean(y_pred == y_test)
         diff = y_test - y_pred
 
-        print ("Accuracy:", accuracy)
+        print ("Accuracy: %g (gamma = %g, %d iters)" % (accuracy, gamma, iters))
         print ("Correctly classified:", np.sum(diff==0))
         print ("Default classified as non-default:", np.sum(diff==1))
         print ("Non-default classified as default:", np.sum(diff==-1))
+        print ("")
 
         # Confusion matrix of predicted vs. true classes
-        conf_matrix = metrics.confusion_matrix(y_test, y_pred)
-        sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu", fmt='g')
-        plt.title('Confusion matrix (default = 1)')
-        plt.ylabel('True value')
-        plt.xlabel('Predicted value')
-        plt.show()
+        # conf_matrix = metrics.confusion_matrix(y_test, y_pred)
+        # sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu", fmt='g')
+        # plt.title('Confusion matrix (default = 1)')
+        # plt.ylabel('True value')
+        # plt.xlabel('Predicted value')
+        # plt.show()
 
         # plt.plot(opt_beta, '-ro')
         # plt.show()

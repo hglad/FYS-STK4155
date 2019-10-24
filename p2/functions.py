@@ -51,10 +51,13 @@ def total_cost(n, y, p, beta):
 
 
 def gradient(m, x, y, beta):
-    exp = np.exp( prob(x,beta) )
-    p = exp/(1+exp)#*(1 - exp/(1+exp))
-    return -np.dot(x.T, (y - p))
+    # exp = np.exp( prob(x,beta) )
+    # exp = np.exp(x @ beta)
+    p = 1./(1+np.exp(-x@beta))
+    # p = 1./(1+exp)
+    # p = exp/(1+exp)#*(1 - exp/(1+exp))
 
+    return np.dot(x.T, (p - y))
     # return (1/m) * np.dot(x.T, prob(x,beta) - y)
 
 
@@ -70,11 +73,11 @@ def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
 
         # if (abs(norm) < 1e-12):
         #     gamma *= 1.01
-        if (abs(norm) > 0):
-            gamma *= 0.99
+        # if (abs(norm) > 0):
+        #     gamma *= 0.99
 
         beta = new_beta
-        print (norm)
+        # print (norm)
         if (norm < 1e-10):
             print (norm, gamma)
             return beta, norm
@@ -90,23 +93,25 @@ def my_logreg(X_train, X_test, y_train, y_test):
     # X[samples, features]
     n = X_train.shape[0]                    # number of training samples
     m = X_train.shape[1]                    # number of features
-    iters = 100000
-    gamma = 1e-8
-    beta_0 = np.random.uniform(-10000,10000,m)         # random initial weights
+    # m = len(X[0])
+    iters = 1000
+    # gamma = 1e-8
+    # beta_0 = np.random.uniform(-10000,10000,m)         # random initial weights
     # opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters, gamma)
 
-    params = np.logspace(np.log10(1e-5), np.log10(1e-4), 1)
+    params = np.logspace(np.log10(1e-3), np.log10(1e-4), 1)
 
     for gamma in params:
-        beta_0 = np.random.uniform(-1,1,m)
+        beta_0 = np.random.uniform(-10,10,m)
+        beta_0 = np.reshape(beta_0, (m,1))
         opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters=iters, gamma=gamma)
 
         # Predict using optimal weights
         print ("Initial beta:", beta_0)
         print ("Optimal beta:", opt_beta)
 
-        predict = prob(X_test, opt_beta)     # values between 0 and 1
-        y_pred = (predict >= 0.5).astype(int)
+        predict = prob(X_test, opt_beta)      # values between 0 and 1
+        y_pred = (predict >= 0.5).astype(int) # convert to 0 or 1
         accuracy = np.mean(y_pred == y_test)
         diff = y_test - y_pred
 
@@ -128,6 +133,7 @@ def my_logreg(X_train, X_test, y_train, y_test):
         #
         # plt.plot(y_pred, '-bo')
         # plt.show()
+
 
 
 

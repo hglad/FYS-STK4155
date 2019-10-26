@@ -15,14 +15,24 @@ from scipy.optimize import fmin_tnc
 np.random.seed(1)
 
 class NeuralNet:
-    def __init__(self, X, n_layers):
+    def __init__(self, X, y, n_h_layers, n_h_neurons, n_categories):
         self.X = X
-        self.n_layers = n_layers
-        self.n = X.shape[0]
-        self.m = X.shape[1]
+        self.y = y
+        self.n_h_layers = n_h_layers
+        self.n_h_neurons = n_h_neurons
+        self.n_categories = n_categories
+        self.n, self.m  = X.shape
+
         # w[layers, features, neurons]
-        self.w = np.random.uniform(-1, 1, (n_layers, self.m, self.n))
-        self.b = np.random.uniform(-0.01, 0.01, (n_layers, self.m))
+        self.w = np.random.uniform(-1, 1, (self.m, n_h_neurons))
+        self.b = np.random.uniform(-0.01, 0.01, self.m)
+        self.z = np.zeros(n_h_neurons)
+        self.a = np.zeros(n_h_neurons)
+
+        self.output_w = np.random.uniform(-1, 1, (n_categories, n_h_neurons))
+        self.output_b = np.random.uniform(-0.01, 0.01, n_categories)
+        self.output_z = np.zeros(n_categories)
+        self.output_a = np.zeros(n_categories)
 
 
     def sigmoid(self, t):
@@ -30,14 +40,33 @@ class NeuralNet:
 
 
     def feed_forward(self):
-        z = np.zeros((self.n_layers, self.m))
-        a = np.zeros((self.n_layers, self.m))
+        # Hidden layer
+        for j in range(self.n_h_neurons):
+            self.z[j] = np.sum(self.w[:,j]*self.X[j,:] + self.b[j])
+            self.a[j] = self.sigmoid(self.z[j])
 
-        for l in range(self.n_layers):
-            for j in range(self.m):
-                z[l,j] = np.sum(self.w[l,:,j]*self.X[j,:] + self.b[l,j])
-                a[l,j] = self.sigmoid(z[l,j])
+        # Output layer
+        for j in range(self.n_categories):
+            print (j)
+            self.output_z[j] = np.sum(self.output_w[j,:]*self.a + self.output_b[j])
+            self.output_a[j] = np.exp(self.output_z[j]) / np.sum(np.exp(self.output_z[j]))
 
+    def predict(self):
+        iters = 100000
+        gamma = 1e-4
+        opt_w, norm = gradient_descent(self.X, self.w.T, self.y, iters, gamma)
+        # for i in range(self.n):
+        #     self.z[0,i] = self.w[0,i]*self.X[i,:] + self.b[0,i]
+
+        pred = np.dot(self.X, opt_w) + self.b
+            # pred = self.sigmoid(temp)
+
+        # Convert to binary values, compute accuracy
+        y_pred = (pred >= 0.5).astype(int) # convert to 0 or 1
+        accuracy = np.mean(y_pred == self.y)
+        print (accuracy)
+
+        return y_pred
 
 
 def logreg_sklearn(X_train, X_test, y_train, y_test):
@@ -78,14 +107,8 @@ def prob(x, beta):
 
 
 def gradient(m, x, y, beta):
-    # exp = np.exp( prob(x,beta) )
-    # exp = np.exp(x @ beta)
     p = 1./(1 + np.exp(-x@beta))        # activation function
-    # p = 1./(1+exp)
-    # p = exp/(1+exp)#*(1 - exp/(1+exp))
-
     return np.dot(x.T, (p - y))
-    # return (1/m) * np.dot(x.T, prob(x,beta) - y)
 
 
 def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
@@ -106,10 +129,9 @@ def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
         beta = new_beta
         # print (norm)
         if (norm < 1e-10):
-            # print (norm, gamma)
             return beta, norm
 
-    # print (norm, gamma)
+    print (norm, gamma)
     return beta, norm
 
 

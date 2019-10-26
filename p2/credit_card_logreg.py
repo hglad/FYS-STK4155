@@ -77,12 +77,16 @@ def main_NN():
     data = load_breast_cancer()
     X = data.data
     y = data.target
+
     scaler = StandardScaler(with_mean=False)
     y = np.reshape(y, (len(y), 1))
     X = scaler.fit_transform(X)
+    n, m = X.shape
 
-    NN = NeuralNet(X, 1)
+    NN = NeuralNet(X, y, 1, int(m/2), 2)
     NN.feed_forward()
+    
+
 
 if __name__ == '__main__':
     main_NN()

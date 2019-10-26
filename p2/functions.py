@@ -15,26 +15,31 @@ from scipy.optimize import fmin_tnc
 np.random.seed(1)
 
 class NeuralNet:
-    def __init__(self, X):
+    def __init__(self, X, n_layers):
         self.X = X
+        self.n_layers = n_layers
         self.n = X.shape[0]
         self.m = X.shape[1]
+        # w[layers, features, neurons]
+        self.w = np.random.uniform(-1, 1, (n_layers, self.m, self.n))
+        self.b = np.random.uniform(-0.01, 0.01, (n_layers, self.m))
 
-        self.w = np.random.uniform(-1, 1, (self.n, self.m))
-        self.b = np.random.uniform(-0.01, 0.01, self.m)
 
     def sigmoid(self, t):
         return 1./(1 + np.exp(-t))
 
-    def feed_forward(self, num_layers):
-        z = np.zeros((num_layers, self.m))
-        a = np.zeros((num_layers, self.m))
 
-        for l in range(num_layers):
+    def feed_forward(self):
+        z = np.zeros((self.n_layers, self.m))
+        a = np.zeros((self.n_layers, self.m))
+
+        for l in range(self.n_layers):
             for j in range(self.m):
-                z[l,j] = np.sum(self.w[:,j]*self.x + self.b[j])
-                a[l,j] = sigmoid(z[l,j])
-                
+                z[l,j] = np.sum(self.w[l,:,j]*self.X[j,:] + self.b[l,j])
+                a[l,j] = self.sigmoid(z[l,j])
+
+
+
 def logreg_sklearn(X_train, X_test, y_train, y_test):
     # Create regressor
     logreg = LogisticRegression()

@@ -72,8 +72,20 @@ def main():
     my_logreg(X_train, X_test, y_train, y_test)
 
 
+def main_NN():
+    from sklearn.datasets import load_breast_cancer
+    data = load_breast_cancer()
+    X = data.data
+    y = data.target
+    scaler = StandardScaler(with_mean=False)
+    y = np.reshape(y, (len(y), 1))
+    X = scaler.fit_transform(X)
+
+    NN = NeuralNet(X, 1)
+    NN.feed_forward()
+
 if __name__ == '__main__':
-    main()
+    main_NN()
 
 # dataset 1: 100 % accuracy, random_state=123, test_size=0.3
 # iters = 50000

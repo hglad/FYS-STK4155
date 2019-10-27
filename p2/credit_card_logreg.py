@@ -18,12 +18,12 @@ def main_NN():
     dataset = int(sys.argv[1])
     X, y = load_dataset(dataset)
     n, m = X.shape
-    print (y.shape)
+    # print (y.shape)
 
-    iters = 5000
-    gamma = 1e-5
+    iters = 10000
+    gamma = 1e-6
 
-    NN = NeuralNet(X, y, n_h_layers=1, n_h_neurons=int(m), n_categories=2)
+    NN = NeuralNet(X, y, n_h_layers=2, n_h_neurons=int(m/5.), n_categories=2)
     NN.fit(iters, gamma)
     y_pred = NN.predict(y[:,0])
     ConfMatrix(y[:,0], y_pred)

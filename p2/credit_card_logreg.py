@@ -14,34 +14,25 @@ def main():
 
 
 def main_NN():
+    from sklearn.neural_network import MLPClassifier
     dataset = int(sys.argv[1])
     X, y = load_dataset(dataset)
     n, m = X.shape
     print (y.shape)
 
-    NN = NeuralNet(X, y, 1, int(m/2), 2)
-    iters = 10000
-    gamma = 1e-2
+    iters = 5000
+    gamma = 1e-5
 
-    # Training loop
-    for i in range(iters):
-        NN.feed_forward()
-        NN.back_propagation(gamma)
+    NN = NeuralNet(X, y, n_h_layers=1, n_h_neurons=int(m), n_categories=2)
+    NN.fit(iters, gamma)
+    y_pred = NN.predict(y[:,0])
+    ConfMatrix(y[:,0], y_pred)
 
-    y_pred = NN.predict()
-
-    # Create confusion matrix and visualize it
-    accuracy = np.mean(y_pred == y[:,0])
-
-
-    print (accuracy)
-    conf_matrix = metrics.confusion_matrix(y, y_pred)
-    sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
-    plt.title('Confusion matrix (default = 1)')
-    plt.ylabel('True value')
-    plt.xlabel('Predicted value')
-    plt.show()
-
+    # scikit-learn NN
+    scikit_NN = MLPClassifier(solver='lbfgs', alpha=0, learning_rate='constant', learning_rate_init=gamma, activation='logistic', hidden_layer_sizes=int(m), random_state=1,max_iter=iters)
+    scikit_NN.fit(X, y[:,0])
+    y_pred = scikit_NN.predict(X)
+    ConfMatrix(y[:,0], y_pred)
 
 
 if __name__ == '__main__':
@@ -57,6 +48,7 @@ if __name__ == '__main__':
 # Correctly classified: 7053
 # Default classified as non-default: 1175
 # Non-default classified as default: 322
+
 
 
 

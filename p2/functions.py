@@ -80,6 +80,18 @@ def load_dataset(dataset):
     return X, y
 
 
+def ConfMatrix(y, y_pred):
+    # Create confusion matrix and visualize it
+    accuracy = np.mean(y_pred == y)
+    print (accuracy)
+    conf_matrix = metrics.confusion_matrix(y, y_pred)
+    sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
+    plt.title('Confusion matrix (default = 1)')
+    plt.ylabel('True value')
+    plt.xlabel('Predicted value')
+    plt.show()
+
+
 class NeuralNet:
     def __init__(self, X, y, n_h_layers, n_h_neurons, n_categories):
         self.X = X
@@ -105,7 +117,11 @@ class NeuralNet:
 
 
     def feed_forward(self):
-        # print (self.X.shape, self.w.shape, self.b.shape)
+        """
+        activation in hidden layer: take sigmoid of weighted input,
+        a_l = sigmoid( (weights*previous activation) + bias )
+        first activation in NN is the input data
+        """
 
         # Hidden layer
         self.z = np.matmul(self.X, self.w) + self.b
@@ -115,35 +131,48 @@ class NeuralNet:
         self.z_output = np.matmul(self.a, self.w_output) + self.b_output
         self.a_output = self.sigmoid(self.z_output)     # probabilities
 
-    def back_propagation(self,gamma=1e-3,lmbd=0):
-        error_output = self.a_output - self.y
+    def back_propagation(self):
+        error_output = self.a_output - self.y   # cost function
+        # print (np.mean(error_output))
         error_hidden = np.matmul(error_output, self.w_output.T) * self.a * (1 - self.a)
 
+        # Gradients
         self.w_output_grad = np.matmul(self.a.T, error_output)
         self.b_output_grad = np.sum(error_output, axis=0)
 
         self.w_grad = np.matmul(self.X.T, error_hidden)
         self.b_grad = np.sum(error_hidden, axis=0)
 
-        if lmbd > 0.0:
-            self.w_output_grad += lmbd * self.w_output
-            self.w_grad += lmbd * self.w
+        if self.lmbd > 0.0:
+            self.w_output_grad += self.lmbd * self.w_output
+            self.w_grad += self.lmbd * self.w
 
-        self.w_output -= gamma * self.w_output_grad
-        self.b_output -= gamma * self.b_output_grad
-        self.w -= gamma * self.w_grad
-        self.b -= gamma * self.b_grad
+        # Optimize weights/biases
+        self.w_output -= self.gamma * self.w_output_grad
+        self.b_output -= self.gamma * self.b_output_grad
+        self.w -= self.gamma * self.w_grad
+        self.b -= self.gamma * self.b_grad
+
+    def fit(self, iters=10000, gamma=1e-3,lmbd=0):
+        """
+        Perform feed-forward and back propagation for given iterations
+        """
+        self.gamma = gamma
+        self.lmbd = lmbd
+        for i in range(iters):
+            self.feed_forward()
+            self.back_propagation()
 
 
     # Perform classification from a_output:
-    def predict(self):
+    def predict(self, y):
         # y_pred = [i for i in self.a_output[i,:]] # convert to 0 or 1
         y_pred = np.zeros(self.n)
         for i in range(self.n):
             ind = np.argmax(self.a_output[i,:])
             y_pred[i] = int(ind)
 
-        accuracy = np.mean(y_pred == self.y[:,0])
+        accuracy = np.mean(y_pred == y)
         # print (accuracy)
 
         return y_pred

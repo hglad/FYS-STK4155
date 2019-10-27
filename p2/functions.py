@@ -14,6 +14,72 @@ from scipy.optimize import fmin_tnc
 
 np.random.seed(1)
 
+def load_dataset(dataset):
+    onehotencoder = OneHotEncoder(categories="auto", sparse=False)
+    scaler = StandardScaler(with_mean=False)
+
+    if dataset == 0:
+        # Read file and create dataframe
+        df = pd.read_excel('default of credit card clients.xls', header=1, skiprows=0, index_col=0, na_values={})
+        df.rename(index=str, columns={"default payment next month": "defaultPaymentNextMonth"}, inplace=True)
+
+        df = df.drop(df[(df.BILL_AMT1 == 0)&
+                    (df.BILL_AMT2 == 0)&
+                    (df.BILL_AMT3 == 0)&
+                    (df.BILL_AMT4 == 0)&
+                    (df.BILL_AMT5 == 0)&
+                    (df.BILL_AMT6 == 0)].index)
+        df = df.drop(df[(df.PAY_AMT1 == 0)&
+                    (df.PAY_AMT2 == 0)&
+                    (df.PAY_AMT3 == 0)&
+                    (df.PAY_AMT4 == 0)&
+                    (df.PAY_AMT5 == 0)&
+                    (df.PAY_AMT6 == 0)].index)
+
+        # Create matrix X of explanatory variables (23 features)
+        X = df.loc[:, df.columns != 'defaultPaymentNextMonth'].values
+        # target variable: if customer defaults or not
+        y = df.loc[:, df.columns == 'defaultPaymentNextMonth'].values
+
+        print (df.head())
+
+        # Categorical variables to one-hots
+        X = ColumnTransformer(
+            [("", onehotencoder, [1,2,3,5,6,7,8,9]),],
+            remainder="passthrough"
+        ).fit_transform(X)
+
+        X = scaler.fit_transform(X)
+        # y_onehot = onehotencoder.fit_transform(y)
+
+    if dataset == 1: # exam marks (towards data science)
+        infile = open('marks.txt', 'r')
+        n = 0
+        for line in infile:
+            n += 1
+
+        X = np.ones((n,3))
+        y = np.zeros((n,1))
+
+        i = 0
+        infile = open('marks.txt', 'r')
+        for line in infile:
+            l = line.split(',')
+            X[i,1], X[i,2], y[i] = l[0], l[1], l[2]
+            i += 1
+
+    if dataset == 2: # breast cancer data
+        from sklearn.datasets import load_breast_cancer
+        data = load_breast_cancer()
+        X = data.data
+        y = data.target
+
+        y = np.reshape(y, (len(y), 1))
+        X = scaler.fit_transform(X)
+
+    return X, y
+
+
 class NeuralNet:
     def __init__(self, X, y, n_h_layers, n_h_neurons, n_categories):
         self.X = X
@@ -24,15 +90,14 @@ class NeuralNet:
         self.n, self.m  = X.shape
 
         # w[layers, features, neurons]
+        # properties of hidden layers
         self.w = np.random.uniform(-1, 1, (self.m, n_h_neurons))
-        self.b = np.random.uniform(-0.01, 0.01, self.m)
-        self.z = np.zeros(n_h_neurons)
-        self.a = np.zeros(n_h_neurons)
+        self.b = np.random.uniform(-0.01, 0.01, n_h_neurons)
+        # self.z = np.zeros(n_h_neurons)
+        # self.a = np.zeros(n_h_neurons)
 
-        self.output_w = np.random.uniform(-1, 1, (n_categories, n_h_neurons))
-        self.output_b = np.random.uniform(-0.01, 0.01, n_categories)
-        self.output_z = np.zeros(n_categories)
-        self.output_a = np.zeros(n_categories)
+        self.w_output = np.random.uniform(-1, 1, (n_h_neurons, n_categories))
+        self.b_output = np.random.uniform(-0.01, 0.01, n_categories)
 
 
     def sigmoid(self, t):
@@ -40,33 +105,49 @@ class NeuralNet:
 
 
     def feed_forward(self):
+        # print (self.X.shape, self.w.shape, self.b.shape)
+
         # Hidden layer
-        for j in range(self.n_h_neurons):
-            self.z[j] = np.sum(self.w[:,j]*self.X[j,:] + self.b[j])
-            self.a[j] = self.sigmoid(self.z[j])
+        self.z = np.matmul(self.X, self.w) + self.b
+        self.a = self.sigmoid(self.z)
 
         # Output layer
-        for j in range(self.n_categories):
-            print (j)
-            self.output_z[j] = np.sum(self.output_w[j,:]*self.a + self.output_b[j])
-            self.output_a[j] = np.exp(self.output_z[j]) / np.sum(np.exp(self.output_z[j]))
+        self.z_output = np.matmul(self.a, self.w_output) + self.b_output
+        self.a_output = self.sigmoid(self.z_output)     # probabilities
 
+    def back_propagation(self,gamma=1e-3,lmbd=0):
+        error_output = self.a_output - self.y
+        error_hidden = np.matmul(error_output, self.w_output.T) * self.a * (1 - self.a)
+
+        self.w_output_grad = np.matmul(self.a.T, error_output)
+        self.b_output_grad = np.sum(error_output, axis=0)
+
+        self.w_grad = np.matmul(self.X.T, error_hidden)
+        self.b_grad = np.sum(error_hidden, axis=0)
+
+        if lmbd > 0.0:
+            self.w_output_grad += lmbd * self.w_output
+            self.w_grad += lmbd * self.w
+
+        self.w_output -= gamma * self.w_output_grad
+        self.b_output -= gamma * self.b_output_grad
+        self.w -= gamma * self.w_grad
+        self.b -= gamma * self.b_grad
+
+
+    # Perform classification from a_output:
     def predict(self):
-        iters = 100000
-        gamma = 1e-4
-        opt_w, norm = gradient_descent(self.X, self.w.T, self.y, iters, gamma)
-        # for i in range(self.n):
-        #     self.z[0,i] = self.w[0,i]*self.X[i,:] + self.b[0,i]
+        # y_pred = [i for i in self.a_output[i,:]] # convert to 0 or 1
+        y_pred = np.zeros(self.n)
+        for i in range(self.n):
+            ind = np.argmax(self.a_output[i,:])
+            y_pred[i] = int(ind)
 
-        pred = np.dot(self.X, opt_w) + self.b
-            # pred = self.sigmoid(temp)
-
-        # Convert to binary values, compute accuracy
-        y_pred = (pred >= 0.5).astype(int) # convert to 0 or 1
-        accuracy = np.mean(y_pred == self.y)
-        print (accuracy)
+        accuracy = np.mean(y_pred == self.y[:,0])
+        # print (accuracy)
 
         return y_pred
+        #return np.argmax(self.a_output, axis=1)
 
 
 def logreg_sklearn(X_train, X_test, y_train, y_test):

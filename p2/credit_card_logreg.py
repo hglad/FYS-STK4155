@@ -2,67 +2,8 @@ from functions import *
 
 def main():
     dataset = int(sys.argv[1])
-    onehotencoder = OneHotEncoder(categories="auto", sparse=False)
-    scaler = StandardScaler(with_mean=False)
+    X, y = load_dataset(dataset)
 
-    if dataset == 0: # credit card data
-        # Read file and create dataframe
-        df = pd.read_excel('default of credit card clients.xls', header=1, skiprows=0, index_col=0, na_values={})
-        df.rename(index=str, columns={"default payment next month": "defaultPaymentNextMonth"}, inplace=True)
-
-        df = df.drop(df[(df.BILL_AMT1 == 0)&
-                    (df.BILL_AMT2 == 0)&
-                    (df.BILL_AMT3 == 0)&
-                    (df.BILL_AMT4 == 0)&
-                    (df.BILL_AMT5 == 0)&
-                    (df.BILL_AMT6 == 0)].index)
-        df = df.drop(df[(df.PAY_AMT1 == 0)&
-                    (df.PAY_AMT2 == 0)&
-                    (df.PAY_AMT3 == 0)&
-                    (df.PAY_AMT4 == 0)&
-                    (df.PAY_AMT5 == 0)&
-                    (df.PAY_AMT6 == 0)].index)
-
-        # Create matrix X of explanatory variables (23 features)
-        X = df.loc[:, df.columns != 'defaultPaymentNextMonth'].values
-        # target variable: if customer defaults or not
-        y = df.loc[:, df.columns == 'defaultPaymentNextMonth'].values
-
-        print (df.head())
-
-        # Categorical variables to one-hots
-        X = ColumnTransformer(
-            [("", onehotencoder, [1,2,3,5,6,7,8,9]),],
-            remainder="passthrough"
-        ).fit_transform(X)
-
-        X = scaler.fit_transform(X)
-        # y_onehot = onehotencoder.fit_transform(y)
-
-    if dataset == 1: # exam marks (towards data science)
-        infile = open('marks.txt', 'r')
-        n = 0
-        for line in infile:
-            n += 1
-
-        X = np.ones((n,3))
-        y = np.zeros((n,1))
-
-        i = 0
-        infile = open('marks.txt', 'r')
-        for line in infile:
-            l = line.split(',')
-            X[i,1], X[i,2], y[i] = l[0], l[1], l[2]
-            i += 1
-
-    if dataset == 2: # breast cancer data
-        from sklearn.datasets import load_breast_cancer
-        data = load_breast_cancer()
-        X = data.data
-        y = data.target
-
-        y = np.reshape(y, (len(y), 1))
-        X = scaler.fit_transform(X)
 
     # Split into train and test data
     print (X)
@@ -73,18 +14,33 @@ def main():
 
 
 def main_NN():
-    from sklearn.datasets import load_breast_cancer
-    data = load_breast_cancer()
-    X = data.data
-    y = data.target
-<
-    scaler = StandardScaler(with_mean=False)
-    y = np.reshape(y, (len(y), 1))
-    X = scaler.fit_transform(X)
+    dataset = int(sys.argv[1])
+    X, y = load_dataset(dataset)
     n, m = X.shape
+    print (y.shape)
 
     NN = NeuralNet(X, y, 1, int(m/2), 2)
-    NN.feed_forward()
+    iters = 10000
+    gamma = 1e-2
+
+    # Training loop
+    for i in range(iters):
+        NN.feed_forward()
+        NN.back_propagation(gamma)
+
+    y_pred = NN.predict()
+
+    # Create confusion matrix and visualize it
+    accuracy = np.mean(y_pred == y[:,0])
+
+
+    print (accuracy)
+    conf_matrix = metrics.confusion_matrix(y, y_pred)
+    sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
+    plt.title('Confusion matrix (default = 1)')
+    plt.ylabel('True value')
+    plt.xlabel('Predicted value')
+    plt.show()
 
 
 

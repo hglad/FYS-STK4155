@@ -82,8 +82,6 @@ def load_dataset(dataset):
 
 def ConfMatrix(y, y_pred):
     # Create confusion matrix and visualize it
-    accuracy = np.mean(y_pred == y)
-    print (accuracy)
     conf_matrix = metrics.confusion_matrix(y, y_pred)
     sb.heatmap(pd.DataFrame(conf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
     plt.title('Confusion matrix (default = 1)')
@@ -105,22 +103,53 @@ class NeuralNet:
         self.a = []
         self.w = []
         self.b = []
-        # initial weight dimensions different from hidden weights
-        w_init = np.random.uniform(-1, 1, (self.m, n_h_neurons))
 
-        self.w.append(w_init)
-        # properties of hidden layers
-        for l in range(n_h_layers):
-            self.b.append(np.random.uniform(-0.01, 0.01,(n_h_neurons)))
+        self.print_properties()
 
-        for l in range(n_h_layers-1):
-            self.w.append(np.random.uniform(-1, 1, (n_h_neurons, n_h_neurons)))
+        # create structure of activations, weight and bias arrays
+        self.create_structure()
 
-        self.b.append(np.random.uniform(-0.01, 0.01,(n_categories)))
-        self.w.append(np.random.uniform(-1, 1, (n_h_neurons, n_categories)))
 
-        # self.w_output = np.random.uniform(-1, 1, (n_h_neurons, n_categories))
-        # self.b_output = np.random.uniform(-0.01, 0.01, n_categories)
+    def print_properties(self):
+        print ("----Neural network----")
+        print (self.m, "input values")
+        print (self.n_h_layers, "hidden layers")
+        print (self.n_h_neurons, "neurons per hidden layer")
+        print (self.n_categories, "output categories\n")
+
+
+    def create_structure(self):
+        self.a.append(self.X) # Input layer
+        w_init = np.random.uniform(-1, 1, (self.m, self.n_h_neurons))
+        self.w.append(w_init) # Input layer -> first hidden layer weights
+
+        # Hidden layers
+        for l in range(self.n_h_layers):
+            self.b.append(np.random.uniform(-0.01, 0.01,(self.n_h_neurons)))
+            self.a.append(np.zeros(self.n_h_neurons))
+
+        for l in range(self.n_h_layers-1):
+            self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons, self.n_h_neurons)))
+
+        self.b.append(np.random.uniform(-0.01, 0.01,(self.n_categories)))
+        self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons, self.n_categories)))
+        self.a.append(np.zeros(self.n_categories))  # Output layer
+
+
+    def update_activations(self, X_new):
+        """
+        Given new data X_new after training neural net, create new activation
+        layers so that we can predict the outcome.
+        """
+        self.a[0] = X_new
+        for l in range(1, self.n_h_layers+1):
+            self.z = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
+            self.a[l] = self.sigmoid(self.z)
+
+        # Output layer
+        self.z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
+        self.a_output = self.sigmoid(self.z_output)     # final probabilities
+        self.a[-1] = self.a_output
 
 
     def sigmoid(self, t):
@@ -134,103 +163,80 @@ class NeuralNet:
         a_l = sigmoid( (weights*previous activation) + bias )
         first activation in NN is the input data
         """
-        # Calculate first hidden layer activation a_1 using input layer
-        # self.z_init = np.matmul(self.X, self.w[0]) + self.b[0]
-        # print (self.z_init.shape)
-        # a_1 = self.sigmoid(self.z_init)
-        #
-        # if self.iters_done == 0:
-        #     self.a.append(self.X)
-        #     self.a.append(a_1)
-        # else:
-        #     self.a[1] = a_1
-
-        # Input layer
-        if self.iters_done == 0:
-            self.a.append(self.X)
-
         # Iterate through hidden layers
         for l in range(1, self.n_h_layers+1):
             # print ('l=', l-1)
             # print (self.a[l-1].shape, self.w[l-1].shape, self.b[l-1].shape)
             self.z = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
-
-            if self.iters_done == 0:
-                self.a.append( self.sigmoid(self.z))
-            else:
-                self.a[l] = self.sigmoid(self.z)
+            self.a[l] = self.sigmoid(self.z)
 
         # Output layer
-        # print (self.a[-1].shape, self.w[-1].shape, self.b[-1].shape)
         self.z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
         self.a_output = self.sigmoid(self.z_output)     # final probabilities
+        self.a[-1] = self.a_output
 
-        if self.iters_done == 0:
-            self.a.append(self.a_output)
-        else:
-            self.a[-1] = self.a_output
 
     def back_propagation(self):
         delta_L = self.a[-1] - self.y   # error in output layer
-        self.b_output_grad = np.sum(delta_L, axis=0)
-        self.b_grad = self.b_output_grad
-
         for l in range(self.n_h_layers+2, 1, -1):
             # print (l-2)
             # print (error_output.shape, self.w[l-2].T.shape, self.a[l-2].shape)
             # print (self.a[l-1].shape, self.w[l-1].shape, self.b[l-1].shape)
             # Gradients
             if (l == self.n_h_layers+2):
-                self.w_grad = np.matmul(self.a[l-2].T, delta_L)
-                self.b_grad = np.sum(delta_L, axis=0)
+                w_grad = np.matmul(self.a[l-2].T, delta_L)
+                b_grad = np.sum(delta_L, axis=0)
 
             else:
                 # print (l-1)
                 # print (self.a[l-1].shape, self.w[l-2].shape)
                 error_hidden = np.matmul(delta_L, self.w[-1].T) * self.a[l-1] * (1 - self.a[l-1])
                 # print (error_output.shape)
-                self.b_grad = np.sum(error_hidden, axis=0)
-                self.w_grad = np.matmul(self.a[l-2].T, error_hidden)
+                b_grad = np.sum(error_hidden, axis=0)
+                w_grad = np.matmul(self.a[l-2].T, error_hidden)
 
             if self.lmbd > 0.0:
-                self.w_output_grad += self.lmbd * self.w[l-2]
-                self.w_grad += self.lmbd * self.w[l-2]
+                # w_output_grad += self.lmbd * self.w[-1]
+                w_grad += self.lmbd * self.w[l-2]
 
             # Optimize weights/biases
             # print(self.w[l-2].shape, self.w_grad.shape, self.b[l-2].shape, self.b_grad.shape)
-            self.w[l-2] -= self.gamma * self.w_grad
-            self.b[l-2] -= self.gamma * self.b_grad
+            # print (l-2)
+            self.w[l-2] -= self.gamma * w_grad
+            self.b[l-2] -= self.gamma * b_grad
 
         self.iters_done += 1
-        print ("iter:",self.iters_done)
+        sys.stdout.write('iter %d / %d  \r' % (self.iters_done, self.iters))
+        sys.stdout.flush()
 
-    def fit(self, iters=10000, gamma=1e-3,lmbd=0):
+
+    def fit(self, iters=10000, gamma=1e-3, lmbd=0):
         """
-        Perform feed-forward and back propagation for given iterations
+        Perform feed-forward and back propagation for given number of iterations
         """
         self.gamma = gamma
         self.lmbd = lmbd
+        self.iters = iters
         for i in range(iters):
             self.feed_forward()
             self.back_propagation()
 
-        self.a = self.a[-1]
-        print (self.a.shape)
 
-
-    # Perform classification from a_output:
-    def predict(self, y):
-        # y_pred = [i for i in self.a_output[i,:]] # convert to 0 or 1
-        y_pred = np.zeros(self.n)
-        for i in range(self.n):
+    def predict(self, X):
+        """
+        Predict outcome using the trained NN. The activation layers are changed
+        according to the input data X.
+        """
+        n, m = X.shape
+        self.update_activations(X)
+        print ("\n")
+        y_pred = np.zeros(n)
+        # Find activation with highest value in output layer
+        for i in range(n):
             ind = np.argmax(self.a_output[i,:])
             y_pred[i] = int(ind)
 
-        accuracy = np.mean(y_pred == y)
-        # print (accuracy)
-
         return y_pred
-        #return np.argmax(self.a_output, axis=1)
 
 
 def logreg_sklearn(X_train, X_test, y_train, y_test):

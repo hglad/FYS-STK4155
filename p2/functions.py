@@ -125,7 +125,7 @@ class NeuralNet:
 
     def sigmoid(self, t):
         return 1./(1 + np.exp(-t))
-        
+
     # @staticmethod
     # @jit
     def feed_forward(self):
@@ -145,18 +145,24 @@ class NeuralNet:
         # else:
         #     self.a[1] = a_1
 
-        # Iterate through next hidden layers
-        self.a.append(self.X)
+        # Input layer
+        if self.iters_done == 0:
+            self.a.append(self.X)
+
+        # Iterate through hidden layers
         for l in range(1, self.n_h_layers+1):
+            # print ('l=', l-1)
             # print (self.a[l-1].shape, self.w[l-1].shape, self.b[l-1].shape)
             self.z = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
+
             if self.iters_done == 0:
                 self.a.append( self.sigmoid(self.z))
             else:
                 self.a[l] = self.sigmoid(self.z)
 
         # Output layer
-        self.z_output = np.matmul(self.a[-1], self.w[-1]) + self.b[-1]
+        # print (self.a[-1].shape, self.w[-1].shape, self.b[-1].shape)
+        self.z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
         self.a_output = self.sigmoid(self.z_output)     # final probabilities
 
         if self.iters_done == 0:
@@ -165,23 +171,24 @@ class NeuralNet:
             self.a[-1] = self.a_output
 
     def back_propagation(self):
-        error_output = self.a[-1] - self.y   # cost function
-        self.b_output_grad = np.sum(error_output, axis=0)
+        delta_L = self.a[-1] - self.y   # error in output layer
+        self.b_output_grad = np.sum(delta_L, axis=0)
         self.b_grad = self.b_output_grad
 
         for l in range(self.n_h_layers+2, 1, -1):
-            print (l-2)
+            # print (l-2)
             # print (error_output.shape, self.w[l-2].T.shape, self.a[l-2].shape)
             # print (self.a[l-1].shape, self.w[l-1].shape, self.b[l-1].shape)
             # Gradients
             if (l == self.n_h_layers+2):
-                self.w_grad = np.matmul(self.a[l-2].T, error_output)
-                self.b_grad = np.sum(error_output, axis=0)
+                self.w_grad = np.matmul(self.a[l-2].T, delta_L)
+                self.b_grad = np.sum(delta_L, axis=0)
 
             else:
-                print (self.a[l-1].shape, self.w[l-2].shape)
-                error_hidden = np.matmul(error_output, self.w[l-1].T) * self.a[-1] * (1 - self.a[-1])
-                print (error_output.shape)
+                # print (l-1)
+                # print (self.a[l-1].shape, self.w[l-2].shape)
+                error_hidden = np.matmul(delta_L, self.w[-1].T) * self.a[l-1] * (1 - self.a[l-1])
+                # print (error_output.shape)
                 self.b_grad = np.sum(error_hidden, axis=0)
                 self.w_grad = np.matmul(self.a[l-2].T, error_hidden)
 
@@ -190,11 +197,12 @@ class NeuralNet:
                 self.w_grad += self.lmbd * self.w[l-2]
 
             # Optimize weights/biases
-            print(self.w[l-2].shape, self.w_grad.shape, self.b[l-2].shape, self.b_grad.shape)
+            # print(self.w[l-2].shape, self.w_grad.shape, self.b[l-2].shape, self.b_grad.shape)
             self.w[l-2] -= self.gamma * self.w_grad
             self.b[l-2] -= self.gamma * self.b_grad
 
         self.iters_done += 1
+        print ("iter:",self.iters_done)
 
     def fit(self, iters=10000, gamma=1e-3,lmbd=0):
         """

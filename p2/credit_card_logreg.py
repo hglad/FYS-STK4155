@@ -23,7 +23,7 @@ def main_NN():
     iters = 10000
     gamma = 1e-6
 
-    NN = NeuralNet(X, y, n_h_layers=2, n_h_neurons=int(m/5.), n_categories=2)
+    NN = NeuralNet(X, y, n_h_layers=3, n_h_neurons=int(m), n_categories=2)
     NN.fit(iters, gamma)
     y_pred = NN.predict(y[:,0])
     ConfMatrix(y[:,0], y_pred)

@@ -125,8 +125,9 @@ class NeuralNet:
 
     def sigmoid(self, t):
         return 1./(1 + np.exp(-t))
-
-
+        
+    # @staticmethod
+    # @jit
     def feed_forward(self):
         """
         activation in hidden layer: take sigmoid of weighted input,

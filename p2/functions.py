@@ -91,13 +91,13 @@ def ConfMatrix(y, y_pred):
 
 
 class NeuralNet:
-    def __init__(self, X, y, n_h_layers, n_h_neurons, n_categories):
+    def __init__(self, X, y, neuron_lengths, n_categories):
         self.X = X
         self.y = y
-        self.n_h_layers = n_h_layers
-        self.n_h_neurons = n_h_neurons
+        self.n_h_layers = len(neuron_lengths)
+        self.n_h_neurons = neuron_lengths
         self.n_categories = n_categories
-        self.n, self.m  = X.shape
+        self.n_train, self.m_train  = X.shape
         self.iters_done = 0
 
         self.a = []
@@ -112,7 +112,7 @@ class NeuralNet:
 
     def print_properties(self):
         print ("----Neural network----")
-        print (self.m, "input values")
+        print (self.m_train, "input values")
         print (self.n_h_layers, "hidden layers")
         print (self.n_h_neurons, "neurons per hidden layer")
         print (self.n_categories, "output categories\n")
@@ -120,19 +120,19 @@ class NeuralNet:
 
     def create_structure(self):
         self.a.append(self.X) # Input layer
-        w_init = np.random.uniform(-1, 1, (self.m, self.n_h_neurons))
+        w_init = np.random.uniform(-1, 1, (self.m_train, self.n_h_neurons[0]))
         self.w.append(w_init) # Input layer -> first hidden layer weights
 
         # Hidden layers
         for l in range(self.n_h_layers):
-            self.b.append(np.random.uniform(-0.01, 0.01,(self.n_h_neurons)))
-            self.a.append(np.zeros(self.n_h_neurons))
+            self.b.append(np.random.uniform(-0.01, 0.01,(self.n_h_neurons[l])))
+            self.a.append(np.zeros(self.n_h_neurons[l]))
 
         for l in range(self.n_h_layers-1):
-            self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons, self.n_h_neurons)))
+            self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons[l], self.n_h_neurons[l+1])))
 
         self.b.append(np.random.uniform(-0.01, 0.01,(self.n_categories)))
-        self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons, self.n_categories)))
+        self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons[-1], self.n_categories)))
         self.a.append(np.zeros(self.n_categories))  # Output layer
 
 
@@ -190,7 +190,7 @@ class NeuralNet:
 
     def back_propagation(self):
         delta_L = self.a[-1] - self.y   # error in output layer
-
+        old_w = self.w
         # Output layer
         # print ("Output layer:")
         self.w_b_gradients(delta_L, self.n_h_layers)
@@ -212,7 +212,7 @@ class NeuralNet:
             # Optimize weights/biases
             self.w[l-1] -= self.gamma * self.w_grad
             self.b[l-1] -= self.gamma * self.b_grad
-
+            # self.w_norm = np.linalg.norm(old_w - self.w)
             delta_old = delta_h
 
         self.iters_done += 1
@@ -227,9 +227,13 @@ class NeuralNet:
         self.gamma = gamma
         self.lmbd = lmbd
         self.iters = iters
+
         for i in range(iters):
             self.feed_forward()
             self.back_propagation()
+
+        # for i in range(self.n_h_layers+1):
+        #     print(self.w[i].shape)
 
 
     def predict(self, X):

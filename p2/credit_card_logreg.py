@@ -20,20 +20,31 @@ def main_NN():
     n, m = X.shape
     # print (y.shape)
 
-    iters = 50000
+    iters = 30000
     gamma = 1e-4
     print (iters, gamma)
     # params = np.logspace(np.log10(1e-1), np.log10(1e-8), 8)
-    params = [1e-4]
-    neuron_list = np.arange(1, 11)
-    layer_list = np.arange(1, 4)
+    neurons_per_layer = [6,3,6]
+    # layer_lengths = [3,4,3]
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=123)
 
     best_accuracy = 0
+
+    NN = NeuralNet(X, y, neuron_lengths=neurons_per_layer, n_categories=2)
+    NN.fit(iters, gamma)
+    y_pred = NN.predict(X)
+    print ("gamma =", gamma)
+    accuracy = np.mean(y_pred == y[:,0])
+
+    print ("accuracy =", accuracy)
+    print ("--------------\n")
+
+    """
     for neurons in neuron_list:
         for layers in layer_list:
 
-            NN = NeuralNet(X, y, n_h_layers=layers, n_h_neurons=neurons, n_categories=2)
+            NN = NeuralNet(X, y, neuron_lengths=neuron_lengths, n_categories=2)
             NN.fit(iters, gamma)
             y_pred = NN.predict(X)
             print ("gamma =", gamma)
@@ -47,16 +58,16 @@ def main_NN():
             # ConfMatrix(y[:,0], y_pred)
 
             # scikit-learn NN
-            """
+
             scikit_NN = MLPClassifier(solver='lbfgs', alpha=0, learning_rate='constant', learning_rate_init=gamma, activation='logistic', hidden_layer_sizes=int(m), random_state=1,max_iter=iters)
 
             scikit_NN.fit(X, y[:,0])
             y_pred = scikit_NN.predict(X)
             ConfMatrix(y[:,0], y_pred)
-            """
+
     print ('Best accuracy')
     print (best_accuracy, best_neurons, "neurons", best_layers, "hidden layers")
-
+    """
 if __name__ == '__main__':
     main_NN()
 

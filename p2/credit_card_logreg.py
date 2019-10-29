@@ -20,13 +20,13 @@ def main_NN():
     n, m = X.shape
     # print (y.shape)
 
-    iters = 30000
+    iters = 50000
     gamma = 1e-4
     print (iters, gamma)
     # params = np.logspace(np.log10(1e-1), np.log10(1e-8), 8)
     params = [1e-4]
-    neuron_list = np.arange(1, 10)
-    layer_list = np.arange(1, 3)
+    neuron_list = np.arange(1, 11)
+    layer_list = np.arange(1, 4)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=123)
 
     best_accuracy = 0
@@ -54,7 +54,8 @@ def main_NN():
             y_pred = scikit_NN.predict(X)
             ConfMatrix(y[:,0], y_pred)
             """
-    print (best_accuracy, best_neurons, best_layers)
+    print ('Best accuracy')
+    print (best_accuracy, best_neurons, "neurons", best_layers, "hidden layers")
 
 if __name__ == '__main__':
     main_NN()

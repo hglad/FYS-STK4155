@@ -142,13 +142,15 @@ class NeuralNet:
         layers so that we can predict the outcome.
         """
         self.a[0] = X_new
-        for l in range(1, self.n_h_layers+1):
-            self.z = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
-            self.a[l] = self.sigmoid(self.z)
+        for l in range(1, self.n_h_layers):
+            z = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
+            self.a[l] = self.sigmoid(z)
+            input = self.a[l]
 
         # Output layer
-        self.z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
-        self.a_output = self.sigmoid(self.z_output)     # final probabilities
+        z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
+        # self.a_output = self.sigmoid(z_output)     # final probabilities
+        self.a_output = np.tanh(z_output)
         self.a[-1] = self.a_output
 
 
@@ -165,45 +167,53 @@ class NeuralNet:
         """
         # Iterate through hidden layers
         for l in range(1, self.n_h_layers+1):
-            # print ('l=', l-1)
-            # print (self.a[l-1].shape, self.w[l-1].shape, self.b[l-1].shape)
-            self.z = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
-            self.a[l] = self.sigmoid(self.z)
+            # print (l)
+            z = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
+            # exp = np.exp(z)
+            # self.a[l] = exp / np.sum(exp, axis=1, keepdims=True)
+            self.a[l] = self.sigmoid(z)
 
         # Output layer
-        self.z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
-        self.a_output = self.sigmoid(self.z_output)     # final probabilities
+        # print (self.a[-1].shape, self.w[-1].shape)
+        z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
+        # exp = np.exp(z_output)
+        # self.a_output = exp / np.sum(exp, axis=1, keepdims=True)
+        # self.a_output = self.sigmoid(z_output)     # final probabilities
+        self.a_output = np.tanh(z_output)
         self.a[-1] = self.a_output
 
+    def w_b_gradients(self, delta, l):
+        self.b_grad = np.sum(delta, axis=0)
+        self.w_grad = np.matmul(self.a[l].T, delta)
+        if self.lmbd > 0.0:
+            self.w_grad += self.lmbd * self.w[l]
 
     def back_propagation(self):
         delta_L = self.a[-1] - self.y   # error in output layer
-        for l in range(self.n_h_layers+2, 1, -1):
-            # print (l-2)
-            # print (error_output.shape, self.w[l-2].T.shape, self.a[l-2].shape)
-            # print (self.a[l-1].shape, self.w[l-1].shape, self.b[l-1].shape)
-            # Gradients
-            if (l == self.n_h_layers+2):
-                w_grad = np.matmul(self.a[l-2].T, delta_L)
-                b_grad = np.sum(delta_L, axis=0)
 
-            else:
-                # print (l-1)
-                # print (self.a[l-1].shape, self.w[l-2].shape)
-                error_hidden = np.matmul(delta_L, self.w[-1].T) * self.a[l-1] * (1 - self.a[l-1])
-                # print (error_output.shape)
-                b_grad = np.sum(error_hidden, axis=0)
-                w_grad = np.matmul(self.a[l-2].T, error_hidden)
+        # Output layer
+        # print ("Output layer:")
+        self.w_b_gradients(delta_L, self.n_h_layers)
+        # print ("test", self.n_h_layers-2)
+        self.w[-1] -= self.gamma * self.w_grad
+        self.b[-1] -= self.gamma * self.b_grad
+        # print (delta_L.shape, self.w[-1].T.shape, self.a[-1].shape)
+        # print (self.w[-1].T.shape)
+        delta_old = delta_L
 
-            if self.lmbd > 0.0:
-                # w_output_grad += self.lmbd * self.w[-1]
-                w_grad += self.lmbd * self.w[l-2]
+        for l in range(self.n_h_layers, 0, -1):
+            # print ("Hidden layer", l-1)
+            # print (delta_old.shape, self.w[l].T.shape, self.a[l].shape)
+
+            # Use previous error to propagate error back to first hidden layer
+            delta_h = np.matmul(delta_old, self.w[l].T) * self.a[l] * (1 - self.a[l])
+            self.w_b_gradients(delta_h, l-1)
 
             # Optimize weights/biases
-            # print(self.w[l-2].shape, self.w_grad.shape, self.b[l-2].shape, self.b_grad.shape)
-            # print (l-2)
-            self.w[l-2] -= self.gamma * w_grad
-            self.b[l-2] -= self.gamma * b_grad
+            self.w[l-1] -= self.gamma * self.w_grad
+            self.b[l-1] -= self.gamma * self.b_grad
+
+            delta_old = delta_h
 
         self.iters_done += 1
         sys.stdout.write('iter %d / %d  \r' % (self.iters_done, self.iters))

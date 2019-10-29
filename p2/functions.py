@@ -120,8 +120,8 @@ class NeuralNet:
 
     def create_structure(self):
         self.a.append(self.X) # Input layer
-        w_init = np.random.uniform(-1, 1, (self.m_train, self.n_h_neurons[0]))
-        self.w.append(w_init) # Input layer -> first hidden layer weights
+        # Input layer -> first hidden layer weights
+        self.w.append(np.random.uniform(-1, 1, (self.m_train, self.n_h_neurons[0])))
 
         # Hidden layers
         for l in range(self.n_h_layers):
@@ -134,24 +134,6 @@ class NeuralNet:
         self.b.append(np.random.uniform(-0.01, 0.01,(self.n_categories)))
         self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons[-1], self.n_categories)))
         self.a.append(np.zeros(self.n_categories))  # Output layer
-
-
-    def update_activations(self, X_new):
-        """
-        Given new data X_new after training neural net, create new activation
-        layers so that we can predict the outcome.
-        """
-        self.a[0] = X_new
-        for l in range(1, self.n_h_layers):
-            z = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
-            self.a[l] = self.sigmoid(z)
-            input = self.a[l]
-
-        # Output layer
-        z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
-        # self.a_output = self.sigmoid(z_output)     # final probabilities
-        self.a_output = np.tanh(z_output)
-        self.a[-1] = self.a_output
 
 
     def sigmoid(self, t):
@@ -167,14 +149,10 @@ class NeuralNet:
         """
         # Iterate through hidden layers
         for l in range(1, self.n_h_layers+1):
-            # print (l)
-            z = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
-            # exp = np.exp(z)
-            # self.a[l] = exp / np.sum(exp, axis=1, keepdims=True)
-            self.a[l] = self.sigmoid(z)
+            z_l = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
+            self.a[l] = self.sigmoid(z_l)
 
         # Output layer
-        # print (self.a[-1].shape, self.w[-1].shape)
         z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
         # exp = np.exp(z_output)
         # self.a_output = exp / np.sum(exp, axis=1, keepdims=True)
@@ -190,21 +168,17 @@ class NeuralNet:
 
     def back_propagation(self):
         delta_L = self.a[-1] - self.y   # error in output layer
-        old_w = self.w
+        old_w = self.w[-1]
+
         # Output layer
-        # print ("Output layer:")
         self.w_b_gradients(delta_L, self.n_h_layers)
-        # print ("test", self.n_h_layers-2)
         self.w[-1] -= self.gamma * self.w_grad
         self.b[-1] -= self.gamma * self.b_grad
-        # print (delta_L.shape, self.w[-1].T.shape, self.a[-1].shape)
-        # print (self.w[-1].T.shape)
+
         delta_old = delta_L
+        # w_norm = np.linalg.norm(old_w - self.w[-1])
 
         for l in range(self.n_h_layers, 0, -1):
-            # print ("Hidden layer", l-1)
-            # print (delta_old.shape, self.w[l].T.shape, self.a[l].shape)
-
             # Use previous error to propagate error back to first hidden layer
             delta_h = np.matmul(delta_old, self.w[l].T) * self.a[l] * (1 - self.a[l])
             self.w_b_gradients(delta_h, l-1)
@@ -212,15 +186,16 @@ class NeuralNet:
             # Optimize weights/biases
             self.w[l-1] -= self.gamma * self.w_grad
             self.b[l-1] -= self.gamma * self.b_grad
-            # self.w_norm = np.linalg.norm(old_w - self.w)
+
             delta_old = delta_h
+            old_w = self.w
 
         self.iters_done += 1
-        sys.stdout.write('iter %d / %d  \r' % (self.iters_done, self.iters))
-        sys.stdout.flush()
+        # sys.stdout.write('iter %d / %d , norm %1.3e \r' % (self.iters_done, self.iters, w_norm))
+        # sys.stdout.flush()
 
 
-    def fit(self, iters=10000, gamma=1e-3, lmbd=0):
+    def train(self, iters=10000, gamma=1e-3, lmbd=0):
         """
         Perform feed-forward and back propagation for given number of iterations
         """
@@ -242,13 +217,15 @@ class NeuralNet:
         according to the input data X.
         """
         n, m = X.shape
-        self.update_activations(X)
-        print ("\n")
+        self.a[0] = X
+        self.feed_forward()
+        print ("")
         y_pred = np.zeros(n)
+
         # Find activation with highest value in output layer
         for i in range(n):
-            ind = np.argmax(self.a_output[i,:])
-            y_pred[i] = int(ind)
+            highest_p = np.argmax(self.a_output[i,:])       # 0 or 1
+            y_pred[i] = highest_p
 
         return y_pred
 

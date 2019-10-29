@@ -20,54 +20,56 @@ def main_NN():
     n, m = X.shape
     # print (y.shape)
 
-    iters = 30000
-    gamma = 1e-4
+    iters = 50000
+    gamma = 1e-6
     print (iters, gamma)
     # params = np.logspace(np.log10(1e-1), np.log10(1e-8), 8)
-    neurons_per_layer = [6,3,6]
+
+    neuron_lengths_h1 = np.arange(1, 3)
+    neuron_lengths_h2 = np.arange(5, int(m))
+
     # layer_lengths = [3,4,3]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=123)
 
     best_accuracy = 0
+    # NN = NeuralNet(X, y, neuron_lengths=neurons_per_layer, n_categories=2)
+    # NN.fit(iters, gamma)
+    # y_pred = NN.predict(X)
+    # print ("gamma =", gamma)
+    # accuracy = np.mean(y_pred == y[:,0])
+    #
+    # print ("accuracy =", accuracy)
+    # print ("--------------\n")
 
-    NN = NeuralNet(X, y, neuron_lengths=neurons_per_layer, n_categories=2)
-    NN.fit(iters, gamma)
-    y_pred = NN.predict(X)
-    print ("gamma =", gamma)
-    accuracy = np.mean(y_pred == y[:,0])
+    for i in range(len(neuron_lengths_h1)):
+        # for j in range(len(neuron_lengths_h2)):
+        neurons_per_layer = [neuron_lengths_h1[i]]
+        NN = NeuralNet(X, y, neuron_lengths=neurons_per_layer, n_categories=2)
+        NN.train(iters, gamma)
+        y_pred = NN.predict(X)
+        print ("gamma =", gamma)
+        accuracy = np.mean(y_pred == y[:,0])
 
-    print ("accuracy =", accuracy)
-    print ("--------------\n")
+        if accuracy > best_accuracy:
+            best_accuracy = accuracy
+            best_neurons = [neuron_lengths_h1[i]]
 
-    """
-    for neurons in neuron_list:
-        for layers in layer_list:
+        print ("accuracy =", accuracy)
+        print ("--------------\n")
+        # ConfMatrix(y[:,0], y_pred)
 
-            NN = NeuralNet(X, y, neuron_lengths=neuron_lengths, n_categories=2)
-            NN.fit(iters, gamma)
-            y_pred = NN.predict(X)
-            print ("gamma =", gamma)
-            accuracy = np.mean(y_pred == y[:,0])
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
-                best_neurons = neurons
-                best_layers = layers
-            print ("accuracy =", accuracy)
-            print ("--------------\n")
-            # ConfMatrix(y[:,0], y_pred)
+        # scikit-learn NN
 
-            # scikit-learn NN
-
-            scikit_NN = MLPClassifier(solver='lbfgs', alpha=0, learning_rate='constant', learning_rate_init=gamma, activation='logistic', hidden_layer_sizes=int(m), random_state=1,max_iter=iters)
-
-            scikit_NN.fit(X, y[:,0])
-            y_pred = scikit_NN.predict(X)
-            ConfMatrix(y[:,0], y_pred)
+        # scikit_NN = MLPClassifier(solver='lbfgs', alpha=0, learning_rate='constant', learning_rate_init=gamma, activation='logistic', hidden_layer_sizes=int(m), random_state=1,max_iter=iters)
+        #
+        # scikit_NN.fit(X, y[:,0])
+        # y_pred = scikit_NN.predict(X)
+        # ConfMatrix(y[:,0], y_pred)
 
     print ('Best accuracy')
-    print (best_accuracy, best_neurons, "neurons", best_layers, "hidden layers")
-    """
+    print (best_accuracy, best_neurons, "neurons")
+
 if __name__ == '__main__':
     main_NN()
 

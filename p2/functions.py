@@ -77,8 +77,7 @@ def load_dataset(dataset):
 
         y = np.reshape(y, (len(y), 1))
         # X = scaler.fit_transform(X)
-        # X[:,0] = X[:,0]/np.max(X[:,0])
-        # X[:,1] = X[:,1]/np.max(X[:,1])
+
         for i in range(len(X[0,:])):
             X[:,i] = X[:,i]/np.max(X[:,i])
 
@@ -172,19 +171,23 @@ class NeuralNet:
         # print ("b1:", self.b[1])
 
 
-    def sigmoid(self, t):
-        return 1./(1 + np.exp(-t))
+    def sigmoid(self, x):
+        t = 1./(1 + np.exp(-x))
+        return t
+
 
     def softmax(self, x):
         t = np.zeros((x.shape))
-
+        softmax = np.zeros((x.shape[1]))
         for i in range(x.shape[0]):
+            # for j in range(x.shape[1]):
             softmax = np.exp(x[i,:])/np.sum(np.exp(x[i,:]))
             t[i] = softmax
+
         # if len(x.shape) > 1:
         #     for i in range(self.n_train):
         #         t[i] = np.max(softmax[i,:])
-
+        # print (t)
         return t
 
 
@@ -205,9 +208,9 @@ class NeuralNet:
 
         # Output layer
         self.z[-1] = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
-        self.a_output = self.softmax(self.z[-1])
-        self.a[-1] = self.a_output
+        self.a_output = self.sigmoid(self.z[-1])
         # print (self.a_output)
+        self.a[-1] = self.a_output
 
 
     def w_b_gradients(self, delta, l):
@@ -217,9 +220,10 @@ class NeuralNet:
         if self.lmbd > 0.0:
             self.w_grad += self.lmbd * self.w[l]
 
+
     def back_propagation(self):
         delta_L = self.a_output - self.y   # error in output layer
-        # print (self.a_output.shape, self.y.shape)
+        # print (self.a_output)
         total_loss = np.mean(delta_L)
         # print (total_loss)
 
@@ -250,8 +254,8 @@ class NeuralNet:
             # print (self.w_grad)
 
         self.iters_done += 1
-        # sys.stdout.write('iter %d / %d , loss %1.3e \r' % (self.iters_done, self.iters, total_loss))
-        # sys.stdout.flush()
+        sys.stdout.write('iter %d / %d , loss %1.3e \r' % (self.iters_done, self.iters, total_loss))
+        sys.stdout.flush()
 
 
     def train(self, iters=10000, gamma=1e-3, lmbd=0):
@@ -265,8 +269,6 @@ class NeuralNet:
         for i in range(iters):
             self.feed_forward()
             self.back_propagation()
-
-        self.feed_forward()     # use last updates to weights/biases
 
 
     def predict(self, X_test):
@@ -297,6 +299,28 @@ class NeuralNet:
             for i in range(n):
                 highest_p = np.argmax(self.a_output)       # 0 or 1
                 y_pred[i] = int(highest_p)
+
+        return y_pred
+
+
+    def predict2(self, X_test):
+        self.a[0] = X_test
+        self.feed_forward()
+        return np.argmax(self.a_output, axis=1)
+
+
+    def predict_single_output_neuron(self, X_test, y_test):
+        self.a[0] = X_test
+        self.y_test = y_test
+        self.feed_forward()
+        y_pred = np.zeros(X_test.shape[0])
+
+        for i in range(X_test.shape[0]):
+            # print (self.a_output[i], self.y_test[i,0])
+            if self.a_output[i] > 0.5:
+                y_pred[i] = 1
+            else:
+                y_pred[i] = 0
 
         return y_pred
 

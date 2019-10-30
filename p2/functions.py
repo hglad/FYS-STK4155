@@ -58,14 +58,14 @@ def load_dataset(dataset):
         for line in infile:
             n += 1
 
-        X = np.ones((n,3))
+        X = np.zeros((n,2))
         y = np.zeros((n,1))
 
         i = 0
         infile = open('marks.txt', 'r')
         for line in infile:
             l = line.split(',')
-            X[i,1], X[i,2], y[i] = l[0], l[1], l[2]
+            X[i,0], X[i,1], y[i] = l[0], l[1], l[2]
             i += 1
 
     if dataset == 2: # breast cancer data
@@ -74,9 +74,17 @@ def load_dataset(dataset):
         X = data.data
         y = data.target
 
-        y = np.reshape(y, (len(y), 1))
-        X = scaler.fit_transform(X)
 
+        y = np.reshape(y, (len(y), 1))
+        # X = scaler.fit_transform(X)
+        # X[:,0] = X[:,0]/np.max(X[:,0])
+        # X[:,1] = X[:,1]/np.max(X[:,1])
+        for i in range(len(X[0,:])):
+            X[:,i] = X[:,i]/np.max(X[:,i])
+
+        # print (X)
+
+    print (y.shape)
     return X, y
 
 
@@ -94,15 +102,35 @@ class NeuralNet:
     def __init__(self, X, y, neuron_lengths, n_categories):
         self.X = X
         self.y = y
+
+        # print (y)
         self.n_h_layers = len(neuron_lengths)
-        self.n_h_neurons = neuron_lengths
         self.n_categories = n_categories
-        self.n_train, self.m_train  = X.shape
         self.iters_done = 0
+
+        if len(X.shape) > 1:
+            self.n_train, self.m_train  = X.shape
+
+        # Special case for a single training point
+        else:
+            self.X = np.reshape(X, (1, len(X)))
+            self.y = np.reshape(y, (1,1))
+            self.n_train = 1
+            self.m_train = len(X)
+
+        # Do not include layers that have 0 neurons
+        self.n_h_neurons = []
+        for layer in neuron_lengths:
+            if (layer != 0):
+                self.n_h_neurons.append(layer)
+
+        self.n_h_layers = len(self.n_h_neurons)
 
         self.a = []
         self.w = []
         self.b = []
+        self.z = []
+        print(self.n_train, self.m_train)
 
         self.print_properties()
 
@@ -127,6 +155,7 @@ class NeuralNet:
         for l in range(self.n_h_layers):
             self.b.append(np.random.uniform(-0.01, 0.01,(self.n_h_neurons[l])))
             self.a.append(np.zeros(self.n_h_neurons[l]))
+            self.z.append(np.zeros(self.n_h_neurons[l]))
 
         for l in range(self.n_h_layers-1):
             self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons[l], self.n_h_neurons[l+1])))
@@ -134,10 +163,30 @@ class NeuralNet:
         self.b.append(np.random.uniform(-0.01, 0.01,(self.n_categories)))
         self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons[-1], self.n_categories)))
         self.a.append(np.zeros(self.n_categories))  # Output layer
+        self.z.append(np.zeros(self.n_categories))
+
+        # print ("w0:", self.w[0])
+        # print ("w1:", self.w[1])
+        #
+        # print ("b0:", self.b[0])
+        # print ("b1:", self.b[1])
 
 
     def sigmoid(self, t):
         return 1./(1 + np.exp(-t))
+
+    def softmax(self, x):
+        t = np.zeros((x.shape))
+
+        for i in range(x.shape[0]):
+            softmax = np.exp(x[i,:])/np.sum(np.exp(x[i,:]))
+            t[i] = softmax
+        # if len(x.shape) > 1:
+        #     for i in range(self.n_train):
+        #         t[i] = np.max(softmax[i,:])
+
+        return t
+
 
     # @staticmethod
     # @jit
@@ -149,49 +198,59 @@ class NeuralNet:
         """
         # Iterate through hidden layers
         for l in range(1, self.n_h_layers+1):
-            z_l = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
-            self.a[l] = self.sigmoid(z_l)
+            self.z[l] = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
+            self.a[l] = np.tanh(self.z[l])
+            # print (self.a[l])
+            # print (self.a[l], '=', 'tanh(', self.a[l-1], self.w[l-1], '+', self.b[l-1], ')')
 
         # Output layer
-        z_output = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
-        # exp = np.exp(z_output)
-        # self.a_output = exp / np.sum(exp, axis=1, keepdims=True)
-        # self.a_output = self.sigmoid(z_output)     # final probabilities
-        self.a_output = np.tanh(z_output)
+        self.z[-1] = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
+        self.a_output = self.softmax(self.z[-1])
         self.a[-1] = self.a_output
+        # print (self.a_output)
+
 
     def w_b_gradients(self, delta, l):
+        # print (delta, self.a[-1].T, l)
         self.b_grad = np.sum(delta, axis=0)
         self.w_grad = np.matmul(self.a[l].T, delta)
         if self.lmbd > 0.0:
             self.w_grad += self.lmbd * self.w[l]
 
     def back_propagation(self):
-        delta_L = self.a[-1] - self.y   # error in output layer
+        delta_L = self.a_output - self.y   # error in output layer
+        # print (self.a_output.shape, self.y.shape)
+        total_loss = np.mean(delta_L)
+        # print (total_loss)
+
         old_w = self.w[-1]
 
         # Output layer
+
         self.w_b_gradients(delta_L, self.n_h_layers)
         self.w[-1] -= self.gamma * self.w_grad
         self.b[-1] -= self.gamma * self.b_grad
 
         delta_old = delta_L
         # w_norm = np.linalg.norm(old_w - self.w[-1])
-
+        # print (self.w_grad)
         for l in range(self.n_h_layers, 0, -1):
+            # print (l-1)
             # Use previous error to propagate error back to first hidden layer
             delta_h = np.matmul(delta_old, self.w[l].T) * self.a[l] * (1 - self.a[l])
             self.w_b_gradients(delta_h, l-1)
 
             # Optimize weights/biases
+            # print (self.w_grad)
             self.w[l-1] -= self.gamma * self.w_grad
             self.b[l-1] -= self.gamma * self.b_grad
 
             delta_old = delta_h
             old_w = self.w
+            # print (self.w_grad)
 
         self.iters_done += 1
-        # sys.stdout.write('iter %d / %d , norm %1.3e \r' % (self.iters_done, self.iters, w_norm))
+        # sys.stdout.write('iter %d / %d , loss %1.3e \r' % (self.iters_done, self.iters, total_loss))
         # sys.stdout.flush()
 
 
@@ -207,25 +266,37 @@ class NeuralNet:
             self.feed_forward()
             self.back_propagation()
 
-        # for i in range(self.n_h_layers+1):
-        #     print(self.w[i].shape)
+        self.feed_forward()     # use last updates to weights/biases
 
 
-    def predict(self, X):
+    def predict(self, X_test):
         """
         Predict outcome using the trained NN. The activation layers are changed
         according to the input data X.
         """
-        n, m = X.shape
-        self.a[0] = X
+        if len(X_test.shape) > 1:
+            n, m = X_test.shape
+        else:
+            n = 1
+            m = len(X_test)
+
+        self.a[0] = X_test
         self.feed_forward()
         print ("")
-        y_pred = np.zeros(n)
+        y_pred = (np.zeros(n)).astype(int)
 
         # Find activation with highest value in output layer
-        for i in range(n):
-            highest_p = np.argmax(self.a_output[i,:])       # 0 or 1
-            y_pred[i] = highest_p
+        if len(self.a_output.shape) > 1:
+            for i in range(n):
+                highest_p = np.argmax(self.a_output[i,:])       # 0 or 1
+                # print (self.a_output[i,:])
+                y_pred[i] = int(highest_p)
+                # print (y_pred[i], self.y[i], type(y_pred[i]))
+        else:
+            # Special case for a single testing point
+            for i in range(n):
+                highest_p = np.argmax(self.a_output)       # 0 or 1
+                y_pred[i] = int(highest_p)
 
         return y_pred
 

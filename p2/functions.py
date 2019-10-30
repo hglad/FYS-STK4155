@@ -164,30 +164,27 @@ class NeuralNet:
         self.a.append(np.zeros(self.n_categories))  # Output layer
         self.z.append(np.zeros(self.n_categories))
 
-        # print ("w0:", self.w[0])
-        # print ("w1:", self.w[1])
-        #
-        # print ("b0:", self.b[0])
-        # print ("b1:", self.b[1])
 
+    def activation(self, x, func='sigmoid'):
 
-    def sigmoid(self, x):
-        t = 1./(1 + np.exp(-x))
-        return t
+        if (func == 'sigmoid'):
+            t = 1./(1 + np.exp(-x))
 
+        if (func == 'softmax'):
+            # t = np.zeros((x.shape))
+            # softmax = np.zeros((x.shape[1]))
+            # for i in range(x.shape[0]):
+            #     softmax = np.exp(x[i,:])/np.sum(np.exp(x[i,:]))
+            #     t[i] = softmax
 
-    def softmax(self, x):
-        t = np.zeros((x.shape))
-        softmax = np.zeros((x.shape[1]))
-        for i in range(x.shape[0]):
-            # for j in range(x.shape[1]):
-            softmax = np.exp(x[i,:])/np.sum(np.exp(x[i,:]))
-            t[i] = softmax
+            exp_term = np.exp(x)
+            t = exp_term / np.sum(exp_term, axis=1, keepdims=True)
 
-        # if len(x.shape) > 1:
-        #     for i in range(self.n_train):
-        #         t[i] = np.max(softmax[i,:])
-        # print (t)
+            # if len(x.shape) > 1:
+            #     for i in range(self.n_train):
+            #         t[i] = np.max(softmax[i,:])
+            # print (t)
+
         return t
 
 
@@ -208,7 +205,8 @@ class NeuralNet:
 
         # Output layer
         self.z[-1] = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
-        self.a_output = self.sigmoid(self.z[-1])
+
+        self.a_output = self.activation(self.z[-1], self.func)
         # print (self.a_output)
         self.a[-1] = self.a_output
 
@@ -258,7 +256,8 @@ class NeuralNet:
         sys.stdout.flush()
 
 
-    def train(self, iters=10000, gamma=1e-3, lmbd=0):
+    def train(self, func='sigmoid', iters=10000, gamma=1e-3, lmbd=0):
+        self.func = func
         """
         Perform feed-forward and back propagation for given number of iterations
         """
@@ -271,7 +270,7 @@ class NeuralNet:
             self.back_propagation()
 
 
-    def predict(self, X_test):
+    def predict(self, X_test, y_test):
         """
         Predict outcome using the trained NN. The activation layers are changed
         according to the input data X.
@@ -303,7 +302,7 @@ class NeuralNet:
         return y_pred
 
 
-    def predict2(self, X_test):
+    def predict2(self, X_test, y_test):
         self.a[0] = X_test
         self.feed_forward()
         return np.argmax(self.a_output, axis=1)

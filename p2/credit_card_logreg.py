@@ -22,6 +22,9 @@ def main_NN():
 
     iters = 10000
     gamma = 1e-4
+    n_categories = 1
+    func = 'sigmoid'
+
     print (iters, gamma)
     # params = np.logspace(np.log10(1e-1), np.log10(1e-8), 8)
 
@@ -36,12 +39,17 @@ def main_NN():
     best_accuracy = 0
     accuracy_scores = np.zeros(len(neuron_lengths_h1)*len(neuron_lengths_h2)*len(neuron_lengths_h3))
 
-    NN = NeuralNet(X_train, y_train, neuron_lengths=[6,6], n_categories=1)
-    NN.train(iters, gamma)
-    y_pred = NN.predict_single_output_neuron(X_test, y_test)
+    NN = NeuralNet(X_train, y_train, neuron_lengths=[10], n_categories=n_categories)
+    NN.train(func, iters, gamma)
+
+    if n_categories == 1:
+        y_pred = NN.predict_single_output_neuron(X_test, y_test)
+    else:
+        y_pred = NN.predict2(X_test, y_test)
+
     # print (y_pred.shape, y_train[:,0].shape)
     accuracy = np.mean(y_pred == y_test[:,0])
-    ConfMatrix(y_test[:,0], y_pred)
+    # ConfMatrix(y_test[:,0], y_pred)
 
     print ("gamma =", gamma)
     print ("accuracy =", accuracy)
@@ -49,40 +57,42 @@ def main_NN():
 
     config = 0
     best_neurons = []
-    # for i in range(len(neuron_lengths_h1)):
-    #     for j in range(len(neuron_lengths_h2)):
-    #         for k in range(len(neuron_lengths_h3)):
-    #             neurons_per_layer = [neuron_lengths_h1[i], neuron_lengths_h2[j], neuron_lengths_h3[k]]
-    #             # neurons_per_layer = [neuron_lengths_h1[i]]
-    #             # print (neurons_per_layer)
-    #             NN = NeuralNet(X_train, y_train, neuron_lengths=neurons_per_layer, n_categories=1)
-    #             NN.train(iters, gamma)
-    #             # exit()
-    #             y_pred = NN.predict_single_output_neuron(X_test, y_test)
-    #             print ("gamma =", gamma)
-    #             accuracy = np.mean(y_pred == y_test[:,0])
-    #             # print (y_pred.shape, y_train.shape)
-    #
-    #             if accuracy > best_accuracy:
-    #                 best_accuracy = accuracy
-    #                 best_neurons = neurons_per_layer
-    #                 # print (neurons_per_layer)
-    #                 # best_neurons = [neuron_lengths_h1[i]]
-    #
-    #             accuracy_scores[config] = accuracy
-    #             print ("accuracy =", accuracy, "best =", best_accuracy, best_neurons)
-    #             print ("--------------\n")
-    #             # ConfMatrix(y_train[:,0], y_pred)
-    #             config += 1
+    """
+    for i in range(len(neuron_lengths_h1)):
+        for j in range(len(neuron_lengths_h2)):
+            for k in range(len(neuron_lengths_h3)):
+                neurons_per_layer = [neuron_lengths_h1[i], neuron_lengths_h2[j], neuron_lengths_h3[k]]
+                # neurons_per_layer = [neuron_lengths_h1[i]]
+                # print (neurons_per_layer)
+                NN = NeuralNet(X_train, y_train, neuron_lengths=neurons_per_layer, n_categories=1)
+                NN.train(iters, gamma)
+                # exit()
+                y_pred = NN.predict_single_output_neuron(X_test, y_test)
+                print ("gamma =", gamma)
+                accuracy = np.mean(y_pred == y_test[:,0])
+                # print (y_pred.shape, y_train.shape)
 
-    for i,j in zip(range(len(neuron_lengths_h1)), range(len(neuron_lengths_h2))):
+                if accuracy > best_accuracy:
+                    best_accuracy = accuracy
+                    best_neurons = neurons_per_layer
+                    # print (neurons_per_layer)
+                    # best_neurons = [neuron_lengths_h1[i]]
+
+                accuracy_scores[config] = accuracy
+                print ("accuracy =", accuracy, "best =", best_accuracy, best_neurons)
+                print ("--------------\n")
+                # ConfMatrix(y_train[:,0], y_pred)
+                config += 1
+    """
+    """
+    for i, j in zip(range(len(neuron_lengths_h1)), range(len(neuron_lengths_h2))):
         neurons_per_layer = [neuron_lengths_h1[i], neuron_lengths_h2[j]]
         # neurons_per_layer = [neuron_lengths_h1[i]]
         # print (neurons_per_layer)
-        NN = NeuralNet(X_train, y_train, neuron_lengths=neurons_per_layer, n_categories=1)
-        NN.train(iters, gamma)
+        NN = NeuralNet(X_train, y_train, neuron_lengths=neurons_per_layer, n_categories=2)
+        NN.train(func, iters, gamma)
         # exit()
-        y_pred = NN.predict_single_output_neuron(X_test, y_test)
+        y_pred = NN.predict2(X_test, y_test)
         print ("gamma =", gamma)
         accuracy = np.mean(y_pred == y_test[:,0])
         # print (y_pred.shape, y_train.shape)
@@ -92,6 +102,31 @@ def main_NN():
             best_neurons = neurons_per_layer
             # print (neurons_per_layer)
             # best_neurons = [neuron_lengths_h1[i]]
+
+        accuracy_scores[config] = accuracy
+        print ("accuracy =", accuracy, "best =", best_accuracy, best_neurons)
+        print ("--------------\n")
+        # ConfMatrix(y_train[:,0], y_pred)
+        config += 1
+    """
+
+    for i in range(len(neuron_lengths_h1)):
+        neurons_per_layer = [neuron_lengths_h1[i]]
+
+        NN = NeuralNet(X_train, y_train, neuron_lengths=neurons_per_layer, n_categories=n_categories)
+        NN.train(func, iters, gamma)
+
+        if n_categories == 1:
+            y_pred = NN.predict_single_output_neuron(X_test, y_test)
+        else:
+            y_pred = NN.predict2(X_test, y_test)
+
+        print ("gamma =", gamma)
+        accuracy = np.mean(y_pred == y_test[:,0])
+
+        if accuracy > best_accuracy:
+            best_accuracy = accuracy
+            best_neurons = neurons_per_layer
 
         accuracy_scores[config] = accuracy
         print ("accuracy =", accuracy, "best =", best_accuracy, best_neurons)

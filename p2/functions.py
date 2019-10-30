@@ -228,7 +228,6 @@ class NeuralNet:
         old_w = self.w[-1]
 
         # Output layer
-
         self.w_b_gradients(delta_L, self.n_h_layers)
         self.w[-1] -= self.gamma * self.w_grad
         self.b[-1] -= self.gamma * self.b_grad

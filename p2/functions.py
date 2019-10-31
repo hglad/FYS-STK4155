@@ -83,6 +83,7 @@ def load_dataset(dataset):
 
         # print (X)
 
+    print (y)
     print (y.shape)
     return X, y
 
@@ -98,8 +99,17 @@ def ConfMatrix(y, y_pred):
 
 
 class NeuralNet:
-    def __init__(self, X, y, neuron_lengths, n_categories):
+    def __init__(self, X, y, neuron_lengths, n_categories, onehot=True):
         self.X = X
+        
+        if n_categories > 1:
+        # if onehot == True:
+            onehotencoder = OneHotEncoder(categories="auto", sparse=False)
+            y = ColumnTransformer(
+                [("", onehotencoder, [0]),],
+                remainder="passthrough"
+            ).fit_transform(y)
+
         self.y = y
 
         # print (y)
@@ -304,6 +314,8 @@ class NeuralNet:
     def predict2(self, X_test, y_test):
         self.a[0] = X_test
         self.feed_forward()
+        y_pred = np.argmax(self.a_output, axis=1)
+
         return np.argmax(self.a_output, axis=1)
 
 

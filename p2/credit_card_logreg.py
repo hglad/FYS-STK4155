@@ -39,17 +39,17 @@ def main_NN():
     best_accuracy = 0
     accuracy_scores = np.zeros(len(neuron_lengths_h1)*len(neuron_lengths_h2)*len(neuron_lengths_h3))
 
-    NN = NeuralNet(X_train, y_train, neuron_lengths=[20,2], n_categories=n_categories, onehot=False)
+    NN = NeuralNet(X_train, y_train, neuron_lengths=[8,5], n_categories=n_categories, onehot=False)
     NN.train(func, iters, gamma)
 
     if n_categories == 1:
-        y_pred = NN.predict_single_output_neuron(X_train, y_train)
+        y_pred = NN.predict_single_output_neuron(X_test, y_test)
     else:
-        y_pred = NN.predict2(X_train, y_train)
+        y_pred = NN.predict2(X_test, y_test)
 
     # print (y_pred.shape, y_train[:,0].shape)
-    accuracy = np.mean(y_pred == y_train[:,0])
-    ConfMatrix(y_train[:,0], y_pred)
+    accuracy = np.mean(y_pred == y_test[:,0])
+    ConfMatrix(y_test[:,0], y_pred)
 
     print ("gamma =", gamma)
     print ("accuracy =", accuracy)
@@ -88,7 +88,7 @@ def main_NN():
 
 # [21,5,4]
 
-    plt.hist(accuracy_scores[0:config], bins=config+1)
+    plt.hist(accuracy_scores[0:config], bins=config)
     plt.show()
         # scikit-learn NN
 

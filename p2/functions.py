@@ -11,6 +11,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score
 from sklearn.linear_model import LogisticRegression
 from sklearn import metrics
 from scipy.optimize import fmin_tnc
+from skimage import io
 
 np.random.seed(1)
 
@@ -80,10 +81,7 @@ def load_dataset(dataset):
         for i in range(n):
             X[i,:] = X[i,:]/np.max(X[i,:])
 
-        # print (X)
 
-    # print (y)
-    # print (y.shape)
     return X, y
 
 
@@ -101,6 +99,7 @@ class NeuralNet:
     def __init__(self, X, y, neuron_lengths, n_categories, onehot=True):
         self.X = X
         onehotencoder = OneHotEncoder(categories="auto", sparse=False)
+
         if n_categories > 1:
         # if onehot == True:
 
@@ -138,12 +137,8 @@ class NeuralNet:
         self.z = np.empty(self.n_h_layers+1, dtype=np.ndarray)
         self.w = np.empty(self.n_h_layers+1, dtype=np.ndarray)
         self.b = np.empty(self.n_h_layers+1, dtype=np.ndarray)
-        # self.a = []
-        # self.w = []
-        # self.b = []
-        # self.z = []
 
-        print(self.n_train, self.m_train)
+        # print(self.n_train, self.m_train)
 
         self.print_properties()
 
@@ -160,28 +155,20 @@ class NeuralNet:
 
 
     def create_structure(self):
-        # self.a.append(self.X) # Input layer
         self.a[0] = self.X
+
         # Input layer -> first hidden layer weights
-        # self.w.append(np.random.uniform(-1, 1, (self.m_train, self.n_h_neurons[0])))
         self.w[0] = np.random.uniform(-1, 1, (self.m_train, self.n_h_neurons[0]))
 
         # Hidden layers
         # print ("hidden")
         for l in range(self.n_h_layers):
-            print (l)
-            # self.b.append(np.random.uniform(-0.01, 0.01,(self.n_h_neurons[l])))
-            # self.a.append(np.zeros(self.n_h_neurons[l]))
-            # self.z.append(np.zeros(self.n_h_neurons[l]))
-
             self.b[l] = np.random.uniform(-0.01, 0.01, (self.n_h_neurons[l]))
             self.a[l+1] = np.zeros(self.n_h_neurons[l])
             self.z[l+1] = np.zeros(self.n_h_neurons[l])
 
         # print ("final")
         for l in range(1, self.n_h_layers):
-            print (l)
-            # self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons[l], self.n_h_neurons[l+1])))
             self.w[l] = np.random.uniform(-1, 1, (self.n_h_neurons[l-1], self.n_h_neurons[l]))
 
         self.b[-1] = np.random.uniform(-0.01, 0.01,(self.n_categories))
@@ -189,7 +176,6 @@ class NeuralNet:
         self.w[-1] = np.random.uniform(-1, 1, (self.n_h_neurons[-1], self.n_categories))
         self.a[-1] = np.zeros(self.n_categories)  # Output layer
         self.z[-1] = np.zeros(self.n_categories)
-        # print (self.b)
 
 
     def activation(self, x, func='sigmoid'):
@@ -197,20 +183,16 @@ class NeuralNet:
         if (func == 'sigmoid'):
             t = 1./(1 + np.exp(-x))
 
-        if (func == 'softmax'):
-            # t = np.zeros((x.shape))
-            # softmax = np.zeros((x.shape[1]))
-            # for i in range(x.shape[0]):
-            #     softmax = np.exp(x[i,:])/np.sum(np.exp(x[i,:]))
-            #     t[i] = softmax
+        elif (func == 'softmax'):
+            if len(x.shape) > 1:
+                exp_term = np.exp(x)
+                t = exp_term / np.sum(exp_term, axis=1, keepdims=True)
+            else:
+                exp_term = np.exp(x)
+                t = exp_term / np.sum(exp_term)
 
-            exp_term = np.exp(x)
-            t = exp_term / np.sum(exp_term, axis=1, keepdims=True)
-
-            # if len(x.shape) > 1:
-            #     for i in range(self.n_train):
-            #         t[i] = np.max(softmax[i,:])
-            # print (t)
+        elif (func == 'tanh'):
+            t = np.tanh(x)
 
         return t
 
@@ -226,15 +208,12 @@ class NeuralNet:
         # Iterate through hidden layers
         for l in range(1, self.n_h_layers+1):
             self.z[l] = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
-            self.a[l] = np.tanh(self.z[l])
-            # print (self.a[l])
-            # print (self.a[l], '=', 'tanh(', self.a[l-1], self.w[l-1], '+', self.b[l-1], ')')
+            self.a[l] = self.activation(self.z[l], 'sigmoid')
 
         # Output layer
         self.z[-1] = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
 
         self.a_output = self.activation(self.z[-1], self.func)
-        # print (self.a_output)
         self.a[-1] = self.a_output
 
 
@@ -248,11 +227,7 @@ class NeuralNet:
 
     def back_propagation(self):
         delta_L = self.a_output - self.y   # error in output layer
-        # print (self.a_output)
         total_loss = np.mean(delta_L)
-        # print (total_loss)
-
-        old_w = self.w[-1]
 
         # Output layer
         self.w_b_gradients(delta_L, self.n_h_layers)
@@ -269,17 +244,14 @@ class NeuralNet:
             self.w_b_gradients(delta_h, l-1)
 
             # Optimize weights/biases
-            # print (self.w_grad)
             self.w[l-1] -= self.gamma * self.w_grad
             self.b[l-1] -= self.gamma * self.b_grad
 
             delta_old = delta_h
-            old_w = self.w
-            # print (self.w_grad)
 
         self.iters_done += 1
-        sys.stdout.write('iter %d / %d , loss %1.3e \r' % (self.iters_done, self.iters, total_loss))
-        sys.stdout.flush()
+        # sys.stdout.write('iter %d / %d , loss %1.3e \r' % (self.iters_done, self.iters, total_loss))
+        # sys.stdout.flush()
 
 
     def train(self, func='sigmoid', iters=10000, gamma=1e-3, lmbd=0):
@@ -296,7 +268,7 @@ class NeuralNet:
             self.back_propagation()
 
 
-    def predict(self, X_test, y_test):
+    def predict(self, X_test):
         """
         Predict outcome using the trained NN. The activation layers are changed
         according to the input data X.
@@ -328,15 +300,22 @@ class NeuralNet:
         return y_pred
 
 
-    def predict2(self, X_test, y_test):
+    def predict2(self, X_test):
         self.a[0] = X_test
-        n, m = X_test.shape
         self.feed_forward()
-        y_pred = np.argmax(self.a_output, axis=1)
+
+        if len(X_test.shape) > 1:
+            n, m = X_test.shape
+            y_pred = np.argmax(self.a_output, axis=1)
+        else:
+            n = len(X_test)
+            X_test = np.reshape(X_test, (n,1))
+            y_pred = np.argmax(self.a_output)
+
         # for i in range(len(X_test)):
         #     print (y_test[i], y_pred[i], self.a_output[i])
 
-        return np.argmax(self.a_output, axis=1)
+        return y_pred
 
 
     def predict_single_output_neuron(self, X_test, y_test):
@@ -353,6 +332,107 @@ class NeuralNet:
                 y_pred[i] = 0
 
         return y_pred
+
+
+class GridSearch:
+    """
+    Class used for determining best combination of learning rate, penalty and
+    neuron configuration. The "search" function
+    """
+    def __init__(self, X_train, y_train, X_test, y_test, func='softmax', iters=3000):
+        self.X_train = X_train
+        self.y_train = y_train
+        self.X_test = X_test
+        self.y_test = y_test
+        self.n_categories = np.max(y_test+1)
+
+        self.best_accuracy = -1
+        self.best_config = []
+        self.best_gamma = 0
+        self.best_lmbd = 0
+        self.func = func
+        self.iters = iters
+
+
+    def search(self, params, gammas, *hidden_layers):
+        hidden_layers = hidden_layers[0]
+        for lmbd in params:
+            for gamma in gammas:
+                NN = NeuralNet(self.X_train, self.y_train, neuron_lengths=hidden_layers, n_categories=self.n_categories, onehot=False)
+                NN.train(self.func, self.iters, gamma=gamma, lmbd=lmbd)
+
+                if self.n_categories == 1:
+                    y_pred = NN.predict_single_output_neuron(self.X_test)
+                else:
+                    y_pred = NN.predict2(self.X_test)
+
+                print ("gamma =", gamma)
+                print ("lmbd = ", lmbd)
+                accuracy = np.mean(y_pred == self.y_test[:,0])
+
+                if accuracy > self.best_accuracy:
+                    self.best_accuracy = accuracy
+                    self.best_config = hidden_layers
+                    self.best_lmbd = lmbd
+                    self.best_gamma = gamma
+
+                print ("accuracy =", accuracy)
+                print ("best =", self.best_accuracy, "with", self.best_config, "lmbd =", self.best_lmbd, "gamma =", self.best_gamma)
+                print ("--------------\n")
+
+
+    def return_params(self):
+        return self.best_accuracy, self.best_config, self.best_lmbd, self.best_gamma
+
+
+def grid_search(X_train, y_train, X_test, y_test, neurons_per_layer, params, gammas, best_accuracy=-1, func='softmax', iters=3000):
+
+
+    for lmbd in params:
+        for gamma in gammas:
+            NN = NeuralNet(X_train, y_train, neuron_lengths=neurons_per_layer, n_categories=n_categories, onehot=False)
+            NN.train(func, iters, gamma=gamma, lmbd=lmbd)
+
+            if n_categories == 1:
+                y_pred = NN.predict_single_output_neuron(X_test)
+            else:
+                y_pred = NN.predict2(X_test)
+
+            print ("gamma =", gamma)
+            print ("lmbd = ", lmbd)
+            accuracy = np.mean(y_pred == y_test[:,0])
+
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                best_neurons = neurons_per_layer
+                best_lmbd = lmbd
+                best_gamma = gamma
+
+            print ("accuracy =", accuracy, "best =", best_accuracy, best_neurons, best_lmbd)
+            print ("best =", best_accuracy, "with", best_neurons, "lmbd =", best_lmbd, "gamma =", best_gamma)
+            print ("--------------\n")
+
+    return best_accuracy, best_lmbd, best_gamma
+
+def input_image_predict(filename):
+    im = io.imread(("%s.png" % filename), as_gray=True)
+    im = im/np.max(im)
+    return im.ravel()
+
+
+def show_misclassified(X_test, y_test, y_pred):
+    """
+    Show inputs that were not classified correctly. Also show correct class
+    and what the classifier predicted.
+    """
+    equal = (y_pred == y_test[:,0]).astype(int)  # 0 for misclassified, 1 else
+    misclassified = np.sum(equal == 0)
+    miss_inds = np.where(equal == 0)[0]
+
+    for ind in miss_inds:
+        print ("Actual:", y_test[ind,0], "Predicted:", y_pred[ind])
+        plt.imshow(X_test[ind].reshape(8,8))
+        plt.show()
 
 
 def logreg_sklearn(X_train, X_test, y_train, y_test):

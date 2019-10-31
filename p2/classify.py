@@ -20,90 +20,75 @@ def main_NN():
     n, m = X.shape
 
     iters = 3000
-    gamma = 1e-2
+    gamma = 1e-3
+    lmbd = 0.001
 
     n_categories = 10
     func = 'softmax'
 
-    # print (iters, gamma)
-    params = np.logspace(1, -4, 6)
+    n_params = 7
+    n_gammas = 3
+    params = np.zeros(n_params)
+    params[1:] = np.logspace(1, -4, n_params-1)
+    gammas = np.logspace(-3, -5, n_gammas)
 
-    neuron_lengths_h1 = np.arange(10, 51)
-    neuron_lengths_h2 = np.arange(0, 6)
-    neuron_lengths_h3 = np.arange(0, 6)
+    print(params)
+    print(gammas)
 
-    # layer_lengths = [3,4,3]
+    neuron_lengths_h1 = np.arange(10, 33)
+    neuron_lengths_h2 = np.arange(8, 25)
+    neuron_lengths_h3 = np.arange(0, 1)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
 
     best_accuracy = 0
     accuracy_scores = np.zeros(len(neuron_lengths_h1)*len(neuron_lengths_h2)*len(neuron_lengths_h3))
 
-    # NN = NeuralNet(X_train, y_train, neuron_lengths=[6,6], n_categories=n_categories, onehot=True)
-    # NN.train(func, iters, gamma)
+    train_single = False
+
+    if train_single == True:
+        NN = NeuralNet(X_train, y_train, neuron_lengths=[38], n_categories=n_categories, onehot=False)
+        NN.train(func, iters, gamma, lmbd=lmbd)
+
+        if n_categories == 1:
+            y_pred = NN.predict_single_output_neuron(X_test)
+        else:
+            y_pred = NN.predict2(X_test)
+
+        equal = (y_pred == y_test[:,0]).astype(int)
+        accuracy = np.mean(equal)
+
+        print ("gamma =", gamma)
+        print ("lmbd =", lmbd)
+        print ("accuracy =", accuracy)
+        print ("--------------\n")
+
+        # ConfMatrix(y_test, y_pred)
+        # show_misclassified(X_test, y_test, y_pred)
+
+
+    grid = GridSearch(X_train, y_train, X_test, y_test)
+
+    for i in range(10, 33):
+        for j in range(0, i+1):
+            for k in range(0, 1):
+                config = [i, j, k]
+                grid.search(params, gammas, config)
+
+    best_accuracy, best_config,best_lmbd, best_gamma = grid.return_params()
+
+    print ("\n--- Grid search done ---")
+    print ('Best accuracy:', best_accuracy)
+    print ("with configuration", best_config, "lmbd =", best_lmbd, "gamma =", best_gamma)
+
+
+    # scikit-learn NN
+
+    # scikit_NN = MLPClassifier(solver='lbfgs', alpha=0, learning_rate='constant', learning_rate_init=gamma, activation='logistic', hidden_layer_sizes=int(m), random_state=1,max_iter=iters)
     #
-    # if n_categories == 1:
-    #     y_pred = NN.predict_single_output_neuron(X_test, y_test)
-    # else:
-    #     y_pred = NN.predict2(X_test, y_test)
-    #
-    # # print (y_pred.shape, y_train[:,0].shape)
-    # accuracy = np.mean(y_pred == y_test[:,0])
-    # ConfMatrix(y_test[:,0], y_pred)
-
-    # print ("gamma =", gamma)
-    # print ("accuracy =", accuracy)
-    # print ("--------------\n")
-
-    config = 0
-    best_neurons = []
-    best_lmbd = 0
-
-    # for i, j in zip(range(len(neuron_lengths_h1)), range(len(neuron_lengths_h2))):
-    for i in range(len(neuron_lengths_h1)):
-        for lmbd in params:
-            # for j in range(len(neuron_lengths_h2)):
-            # neurons_per_layer = [neuron_lengths_h1[i], neuron_lengths_h2[j]]
-            neurons_per_layer = [neuron_lengths_h1[i]]
-            # print (neurons_per_layer)
-            NN = NeuralNet(X_train, y_train, neuron_lengths=neurons_per_layer, n_categories=n_categories, onehot=False)
-            NN.train(func, iters, gamma, lmbd=lmbd)
-
-            if n_categories == 1:
-                y_pred = NN.predict_single_output_neuron(X_test, y_test)
-            else:
-                y_pred = NN.predict2(X_test, y_test)
-
-            print ("gamma =", gamma)
-            print ("lmbd = ", lmbd)
-            accuracy = np.mean(y_pred == y_test[:,0])
-
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
-                best_neurons = neurons_per_layer
-                best_lmbd = lmbd
-
-            accuracy_scores[config] = accuracy
-            print ("accuracy =", accuracy, "best =", best_accuracy, best_neurons, best_lmbd)
-            print ("--------------\n")
-            # ConfMatrix(y_test[:,0], y_pred)
-            config += 1
-
-
-# [21,5,4]
-
-    plt.hist(accuracy_scores[0:config], bins=int(config/10))
-    plt.show()
-        # scikit-learn NN
-
-        # scikit_NN = MLPClassifier(solver='lbfgs', alpha=0, learning_rate='constant', learning_rate_init=gamma, activation='logistic', hidden_layer_sizes=int(m), random_state=1,max_iter=iters)
-        #
-        # scikit_NN.fit(X, y[:,0])
-        # y_pred = scikit_NN.predict(X)
-        # ConfMatrix(y[:,0], y_pred)
-
-    print ('Best accuracy')
-    print (best_accuracy, best_neurons, "neurons", "with lmbd =", best_lmbd)
+    # scikit_NN.fit(X, y[:,0])
+    # y_pred = scikit_NN.predict(X)
+    # ConfMatrix(y[:,0], y_pred)
 
 if __name__ == '__main__':
     main_NN()
@@ -121,31 +106,11 @@ if __name__ == '__main__':
 
 
 """NN"""
-# using dataset 2
-# iters = 10000
-# gamma = 1e-5
-# NN = NeuralNet(X, y, n_h_layers=4, n_h_neurons=6, n_categories=2)
-# -> 0.927 accuracy
-#
-# gamma = 1e-05
-# ----Neural network----
-# 30 input values
-# 1 hidden layers
-# 1 neurons per hidden layer
-# 2 output categories
-#
-# iters = 100000
-# accuracy 0.9806678383128296
-
-
-# testing for 1-10 hidden layers, 1-11 neurons per layer
-# -> 1 layer 5 neurons best, 0.9876977152899824 accuracy
-
-# accuracy = 1 for dataset 2, predict on train
-    # iters = 15000
-    # gamma = 3e-3
-    # neurons [20]
-    # sigmoid (only one output neuron)
+# digits dataset
+# good configurations:
+# [13], lmbd = 0.0001, gamma = 1e-3     accuracy = 0.9777777
+# [32,16], lmbd = 0, gamma = 1e-3       accuracy = 0.9777777
+# [38], lmbd = 0.001, gamma = 1e-3      accuracy = 0.9805555
 
 
 

@@ -69,22 +69,21 @@ def load_dataset(dataset):
             i += 1
 
     if dataset == 2: # breast cancer data
-        from sklearn.datasets import load_breast_cancer
-        data = load_breast_cancer()
+        from sklearn.datasets import load_digits
+        data = load_digits()
         X = data.data
         y = data.target
 
-
         y = np.reshape(y, (len(y), 1))
         # X = scaler.fit_transform(X)
-
-        for i in range(len(X[0,:])):
-            X[:,i] = X[:,i]/np.max(X[:,i])
+        n, m = X.shape
+        for i in range(n):
+            X[i,:] = X[i,:]/np.max(X[i,:])
 
         # print (X)
 
-    print (y)
-    print (y.shape)
+    # print (y)
+    # print (y.shape)
     return X, y
 
 
@@ -101,10 +100,11 @@ def ConfMatrix(y, y_pred):
 class NeuralNet:
     def __init__(self, X, y, neuron_lengths, n_categories, onehot=True):
         self.X = X
-        
+        onehotencoder = OneHotEncoder(categories="auto", sparse=False)
         if n_categories > 1:
         # if onehot == True:
-            onehotencoder = OneHotEncoder(categories="auto", sparse=False)
+
+            # for i in range(n_categories):
             y = ColumnTransformer(
                 [("", onehotencoder, [0]),],
                 remainder="passthrough"
@@ -112,7 +112,6 @@ class NeuralNet:
 
         self.y = y
 
-        # print (y)
         self.n_h_layers = len(neuron_lengths)
         self.n_categories = n_categories
         self.iters_done = 0
@@ -135,10 +134,15 @@ class NeuralNet:
 
         self.n_h_layers = len(self.n_h_neurons)
 
-        self.a = []
-        self.w = []
-        self.b = []
-        self.z = []
+        self.a = np.empty(self.n_h_layers+2, dtype=np.ndarray)
+        self.z = np.empty(self.n_h_layers+1, dtype=np.ndarray)
+        self.w = np.empty(self.n_h_layers+1, dtype=np.ndarray)
+        self.b = np.empty(self.n_h_layers+1, dtype=np.ndarray)
+        # self.a = []
+        # self.w = []
+        # self.b = []
+        # self.z = []
+
         print(self.n_train, self.m_train)
 
         self.print_properties()
@@ -156,23 +160,36 @@ class NeuralNet:
 
 
     def create_structure(self):
-        self.a.append(self.X) # Input layer
+        # self.a.append(self.X) # Input layer
+        self.a[0] = self.X
         # Input layer -> first hidden layer weights
-        self.w.append(np.random.uniform(-1, 1, (self.m_train, self.n_h_neurons[0])))
+        # self.w.append(np.random.uniform(-1, 1, (self.m_train, self.n_h_neurons[0])))
+        self.w[0] = np.random.uniform(-1, 1, (self.m_train, self.n_h_neurons[0]))
 
         # Hidden layers
+        # print ("hidden")
         for l in range(self.n_h_layers):
-            self.b.append(np.random.uniform(-0.01, 0.01,(self.n_h_neurons[l])))
-            self.a.append(np.zeros(self.n_h_neurons[l]))
-            self.z.append(np.zeros(self.n_h_neurons[l]))
+            print (l)
+            # self.b.append(np.random.uniform(-0.01, 0.01,(self.n_h_neurons[l])))
+            # self.a.append(np.zeros(self.n_h_neurons[l]))
+            # self.z.append(np.zeros(self.n_h_neurons[l]))
 
-        for l in range(self.n_h_layers-1):
-            self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons[l], self.n_h_neurons[l+1])))
+            self.b[l] = np.random.uniform(-0.01, 0.01, (self.n_h_neurons[l]))
+            self.a[l+1] = np.zeros(self.n_h_neurons[l])
+            self.z[l+1] = np.zeros(self.n_h_neurons[l])
 
-        self.b.append(np.random.uniform(-0.01, 0.01,(self.n_categories)))
-        self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons[-1], self.n_categories)))
-        self.a.append(np.zeros(self.n_categories))  # Output layer
-        self.z.append(np.zeros(self.n_categories))
+        # print ("final")
+        for l in range(1, self.n_h_layers):
+            print (l)
+            # self.w.append(np.random.uniform(-1, 1, (self.n_h_neurons[l], self.n_h_neurons[l+1])))
+            self.w[l] = np.random.uniform(-1, 1, (self.n_h_neurons[l-1], self.n_h_neurons[l]))
+
+        self.b[-1] = np.random.uniform(-0.01, 0.01,(self.n_categories))
+        # self.b.append(np.random.uniform(-0.01, 0.01,(self.n_categories)))
+        self.w[-1] = np.random.uniform(-1, 1, (self.n_h_neurons[-1], self.n_categories))
+        self.a[-1] = np.zeros(self.n_categories)  # Output layer
+        self.z[-1] = np.zeros(self.n_categories)
+        # print (self.b)
 
 
     def activation(self, x, func='sigmoid'):
@@ -313,8 +330,11 @@ class NeuralNet:
 
     def predict2(self, X_test, y_test):
         self.a[0] = X_test
+        n, m = X_test.shape
         self.feed_forward()
         y_pred = np.argmax(self.a_output, axis=1)
+        # for i in range(len(X_test)):
+        #     print (y_test[i], y_pred[i], self.a_output[i])
 
         return np.argmax(self.a_output, axis=1)
 

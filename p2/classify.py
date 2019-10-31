@@ -19,16 +19,16 @@ def main_NN():
     X, y = load_dataset(dataset)
     n, m = X.shape
 
-    iters = 5000
-    gamma = 1e-4
+    iters = 3000
+    gamma = 1e-2
 
-    n_categories = 1
-    func = 'sigmoid'
+    n_categories = 10
+    func = 'softmax'
 
-    print (iters, gamma)
-    # params = np.logspace(np.log10(1e-1), np.log10(1e-8), 8)
+    # print (iters, gamma)
+    params = np.logspace(1, -4, 6)
 
-    neuron_lengths_h1 = np.arange(1, 21)
+    neuron_lengths_h1 = np.arange(10, 51)
     neuron_lengths_h2 = np.arange(0, 6)
     neuron_lengths_h3 = np.arange(0, 6)
 
@@ -39,33 +39,35 @@ def main_NN():
     best_accuracy = 0
     accuracy_scores = np.zeros(len(neuron_lengths_h1)*len(neuron_lengths_h2)*len(neuron_lengths_h3))
 
-    NN = NeuralNet(X_train, y_train, neuron_lengths=[8,5], n_categories=n_categories, onehot=False)
-    NN.train(func, iters, gamma)
+    # NN = NeuralNet(X_train, y_train, neuron_lengths=[6,6], n_categories=n_categories, onehot=True)
+    # NN.train(func, iters, gamma)
+    #
+    # if n_categories == 1:
+    #     y_pred = NN.predict_single_output_neuron(X_test, y_test)
+    # else:
+    #     y_pred = NN.predict2(X_test, y_test)
+    #
+    # # print (y_pred.shape, y_train[:,0].shape)
+    # accuracy = np.mean(y_pred == y_test[:,0])
+    # ConfMatrix(y_test[:,0], y_pred)
 
-    if n_categories == 1:
-        y_pred = NN.predict_single_output_neuron(X_test, y_test)
-    else:
-        y_pred = NN.predict2(X_test, y_test)
-
-    # print (y_pred.shape, y_train[:,0].shape)
-    accuracy = np.mean(y_pred == y_test[:,0])
-    ConfMatrix(y_test[:,0], y_pred)
-
-    print ("gamma =", gamma)
-    print ("accuracy =", accuracy)
-    print ("--------------\n")
+    # print ("gamma =", gamma)
+    # print ("accuracy =", accuracy)
+    # print ("--------------\n")
 
     config = 0
     best_neurons = []
+    best_lmbd = 0
 
     # for i, j in zip(range(len(neuron_lengths_h1)), range(len(neuron_lengths_h2))):
     for i in range(len(neuron_lengths_h1)):
-        for j in range(len(neuron_lengths_h2)):
-            neurons_per_layer = [neuron_lengths_h1[i], neuron_lengths_h2[j]]
-            # neurons_per_layer = [neuron_lengths_h1[i]]
+        for lmbd in params:
+            # for j in range(len(neuron_lengths_h2)):
+            # neurons_per_layer = [neuron_lengths_h1[i], neuron_lengths_h2[j]]
+            neurons_per_layer = [neuron_lengths_h1[i]]
             # print (neurons_per_layer)
             NN = NeuralNet(X_train, y_train, neuron_lengths=neurons_per_layer, n_categories=n_categories, onehot=False)
-            NN.train(func, iters, gamma)
+            NN.train(func, iters, gamma, lmbd=lmbd)
 
             if n_categories == 1:
                 y_pred = NN.predict_single_output_neuron(X_test, y_test)
@@ -73,14 +75,16 @@ def main_NN():
                 y_pred = NN.predict2(X_test, y_test)
 
             print ("gamma =", gamma)
+            print ("lmbd = ", lmbd)
             accuracy = np.mean(y_pred == y_test[:,0])
 
             if accuracy > best_accuracy:
                 best_accuracy = accuracy
                 best_neurons = neurons_per_layer
+                best_lmbd = lmbd
 
             accuracy_scores[config] = accuracy
-            print ("accuracy =", accuracy, "best =", best_accuracy, best_neurons)
+            print ("accuracy =", accuracy, "best =", best_accuracy, best_neurons, best_lmbd)
             print ("--------------\n")
             # ConfMatrix(y_test[:,0], y_pred)
             config += 1
@@ -88,7 +92,7 @@ def main_NN():
 
 # [21,5,4]
 
-    plt.hist(accuracy_scores[0:config], bins=config)
+    plt.hist(accuracy_scores[0:config], bins=int(config/10))
     plt.show()
         # scikit-learn NN
 
@@ -99,7 +103,7 @@ def main_NN():
         # ConfMatrix(y[:,0], y_pred)
 
     print ('Best accuracy')
-    print (best_accuracy, best_neurons, "neurons")
+    print (best_accuracy, best_neurons, "neurons", "with lmbd =", best_lmbd)
 
 if __name__ == '__main__':
     main_NN()

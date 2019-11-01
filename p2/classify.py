@@ -19,18 +19,18 @@ def main_NN():
     X, y = load_dataset(dataset)
     n, m = X.shape
 
-    iters = 3000
-    gamma = 1e-3
-    lmbd = 1e-3
+    iters = 5000
+    lmbd = 0; gamma = 5e-6
 
     n_categories = 10
-    func = 'softmax'
+    hidden_a_func = 'sigmoid'
+    output_a_func = 'softmax'
 
-    n_params = 7
-    n_gammas = 3
+    n_params = 5
+    n_gammas = 4
     params = np.zeros(n_params)
-    params[1:] = np.logspace(1, -4, n_params-1)
-    gammas = np.logspace(-3, -5, n_gammas)
+    params[1:] = np.logspace(1, -2, n_params-1)
+    gammas = np.logspace(-2, -5, n_gammas)
 
     print(params)
     print(gammas)
@@ -41,14 +41,13 @@ def main_NN():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
 
-    best_accuracy = 0
     accuracy_scores = np.zeros(len(neuron_lengths_h1)*len(neuron_lengths_h2)*len(neuron_lengths_h3))
 
-    train_single = True
+    train_single_NN = False
 
-    if train_single == True:
-        NN = NeuralNet(X_train, y_train, neuron_lengths=[20,12], onehot=False)
-        NN.train(func, iters, gamma, lmbd=lmbd)
+    if train_single_NN == True:
+        NN = NeuralNet(X_train, y_train, [48, 32], ['sigmoid', 'sigmoid'], 'softmax')
+        NN.train(iters, gamma, lmbd=lmbd)
 
         if n_categories == 1:
             y_pred = NN.predict_single_output_neuron(X_test)
@@ -66,13 +65,18 @@ def main_NN():
         # ConfMatrix(y_test, y_pred)
         # show_misclassified(X_test, y_test, y_pred)
 
-    for i in range(10, 33):
-        for j in range(0, i+1):
-            for k in range(0, 1):
-                config = [i, j, k]
-                NN.grid_search(X_test, y_test, params, gammas, config)
+    # exit()
+    NN_grid = NeuralNet(X_train, y_train, [32, 16], ['tanh', 'sigmoid'], 'softmax')
+    NN_grid.grid_search(X_test, y_test, params, gammas, [32, 16])
 
-    best_accuracy, best_config,best_lmbd, best_gamma = NN.return_params()
+    # Iterate over multiple hidden layer configurations
+    # for i in range(1, 6):
+    #     for j in range(0, i+1):
+    #         for k in range(0, 1):
+    #             config = [i, j, k]
+    #             NN_grid.grid_search(X_test, y_test, params, gammas, config)
+
+    best_accuracy, best_config,best_lmbd, best_gamma = NN_grid.return_params()
 
     print ("\n--- Grid search done ---")
     print ('Best accuracy:', best_accuracy)

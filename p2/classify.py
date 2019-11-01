@@ -21,7 +21,7 @@ def main_NN():
 
     iters = 3000
     gamma = 1e-3
-    lmbd = 0.001
+    lmbd = 1e-3
 
     n_categories = 10
     func = 'softmax'
@@ -44,10 +44,10 @@ def main_NN():
     best_accuracy = 0
     accuracy_scores = np.zeros(len(neuron_lengths_h1)*len(neuron_lengths_h2)*len(neuron_lengths_h3))
 
-    train_single = False
+    train_single = True
 
     if train_single == True:
-        NN = NeuralNet(X_train, y_train, neuron_lengths=[38], n_categories=n_categories, onehot=False)
+        NN = NeuralNet(X_train, y_train, neuron_lengths=[20,12], onehot=False)
         NN.train(func, iters, gamma, lmbd=lmbd)
 
         if n_categories == 1:
@@ -66,16 +66,13 @@ def main_NN():
         # ConfMatrix(y_test, y_pred)
         # show_misclassified(X_test, y_test, y_pred)
 
-
-    grid = GridSearch(X_train, y_train, X_test, y_test)
-
     for i in range(10, 33):
         for j in range(0, i+1):
             for k in range(0, 1):
                 config = [i, j, k]
-                grid.search(params, gammas, config)
+                NN.grid_search(X_test, y_test, params, gammas, config)
 
-    best_accuracy, best_config,best_lmbd, best_gamma = grid.return_params()
+    best_accuracy, best_config,best_lmbd, best_gamma = NN.return_params()
 
     print ("\n--- Grid search done ---")
     print ('Best accuracy:', best_accuracy)
@@ -108,9 +105,10 @@ if __name__ == '__main__':
 """NN"""
 # digits dataset
 # good configurations:
-# [13], lmbd = 0.0001, gamma = 1e-3     accuracy = 0.9777777
-# [32,16], lmbd = 0, gamma = 1e-3       accuracy = 0.9777777
-# [38], lmbd = 0.001, gamma = 1e-3      accuracy = 0.9805555
+# [13], lmbd = 0.0001, gamma = 1e-3         accuracy = 0.9777777
+# [32,16], lmbd = 0, gamma = 1e-3           accuracy = 0.9777777
+# [38], lmbd = 0.001, gamma = 1e-3          accuracy = 0.9805555
+# [20, 12], lmbd = 0.001, gamma = 0.001     accuracy = 0.9833333
 
 
 

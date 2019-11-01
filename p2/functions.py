@@ -96,11 +96,12 @@ def ConfMatrix(y, y_pred):
 
 
 class NeuralNet:
-    def __init__(self, X, y, neuron_lengths, n_categories, onehot=True):
+    def __init__(self, X, y, neuron_lengths, onehot=True):
         self.X = X
         onehotencoder = OneHotEncoder(categories="auto", sparse=False)
+        self.n_categories = np.max(y+1)
 
-        if n_categories > 1:
+        if self.n_categories > 1:
         # if onehot == True:
 
             # for i in range(n_categories):
@@ -110,9 +111,6 @@ class NeuralNet:
             ).fit_transform(y)
 
         self.y = y
-
-        self.n_h_layers = len(neuron_lengths)
-        self.n_categories = n_categories
         self.iters_done = 0
 
         if len(X.shape) > 1:
@@ -124,7 +122,26 @@ class NeuralNet:
             self.y = np.reshape(y, (1,1))
             self.n_train = 1
             self.m_train = len(X)
+            
+        # Used for grid search function
+        self.best_accuracy = -1
+        self.best_config = []
+        self.best_gamma = 0
+        self.best_lmbd = 0
 
+        # create structure of activations, weight and bias arrays
+        self.create_structure(neuron_lengths)
+        self.print_properties()
+
+    def print_properties(self):
+        print ("----Neural network----")
+        print (self.m_train, "input values")
+        print (self.n_h_layers, "hidden layers")
+        print (self.n_h_neurons, "neurons per hidden layer")
+        print (self.n_categories, "output categories\n")
+
+
+    def create_structure(self, neuron_lengths):
         # Do not include layers that have 0 neurons
         self.n_h_neurons = []
         for layer in neuron_lengths:
@@ -138,23 +155,6 @@ class NeuralNet:
         self.w = np.empty(self.n_h_layers+1, dtype=np.ndarray)
         self.b = np.empty(self.n_h_layers+1, dtype=np.ndarray)
 
-        # print(self.n_train, self.m_train)
-
-        self.print_properties()
-
-        # create structure of activations, weight and bias arrays
-        self.create_structure()
-
-
-    def print_properties(self):
-        print ("----Neural network----")
-        print (self.m_train, "input values")
-        print (self.n_h_layers, "hidden layers")
-        print (self.n_h_neurons, "neurons per hidden layer")
-        print (self.n_categories, "output categories\n")
-
-
-    def create_structure(self):
         self.a[0] = self.X
 
         # Input layer -> first hidden layer weights
@@ -334,45 +334,31 @@ class NeuralNet:
         return y_pred
 
 
-class GridSearch:
-    """
-    Class used for determining best combination of learning rate, penalty and
-    neuron configuration. The "search" function
-    """
-    def __init__(self, X_train, y_train, X_test, y_test, func='softmax', iters=3000):
-        self.X_train = X_train
-        self.y_train = y_train
-        self.X_test = X_test
-        self.y_test = y_test
-        self.n_categories = np.max(y_test+1)
+    def grid_search(self, X_test, y_test,  params, gammas, *config):
+        """
+        Function used for determining best combination of learning rate, penalty and
+        neuron configuration.
+        """
+        config = config[0]
 
-        self.best_accuracy = -1
-        self.best_config = []
-        self.best_gamma = 0
-        self.best_lmbd = 0
-        self.func = func
-        self.iters = iters
-
-
-    def search(self, params, gammas, *hidden_layers):
-        hidden_layers = hidden_layers[0]
         for lmbd in params:
             for gamma in gammas:
-                NN = NeuralNet(self.X_train, self.y_train, neuron_lengths=hidden_layers, n_categories=self.n_categories, onehot=False)
-                NN.train(self.func, self.iters, gamma=gamma, lmbd=lmbd)
+                self.create_structure(config)
+                self.print_properties()
+                self.train(self.func, 3000, gamma=gamma, lmbd=lmbd)
 
                 if self.n_categories == 1:
-                    y_pred = NN.predict_single_output_neuron(self.X_test)
+                    y_pred = self.predict_single_output_neuron(X_test)
                 else:
-                    y_pred = NN.predict2(self.X_test)
+                    y_pred = self.predict2(X_test)
 
                 print ("gamma =", gamma)
                 print ("lmbd = ", lmbd)
-                accuracy = np.mean(y_pred == self.y_test[:,0])
+                accuracy = np.mean(y_pred == y_test[:,0])
 
                 if accuracy > self.best_accuracy:
                     self.best_accuracy = accuracy
-                    self.best_config = hidden_layers
+                    self.best_config = config
                     self.best_lmbd = lmbd
                     self.best_gamma = gamma
 
@@ -384,35 +370,6 @@ class GridSearch:
     def return_params(self):
         return self.best_accuracy, self.best_config, self.best_lmbd, self.best_gamma
 
-
-def grid_search(X_train, y_train, X_test, y_test, neurons_per_layer, params, gammas, best_accuracy=-1, func='softmax', iters=3000):
-
-
-    for lmbd in params:
-        for gamma in gammas:
-            NN = NeuralNet(X_train, y_train, neuron_lengths=neurons_per_layer, n_categories=n_categories, onehot=False)
-            NN.train(func, iters, gamma=gamma, lmbd=lmbd)
-
-            if n_categories == 1:
-                y_pred = NN.predict_single_output_neuron(X_test)
-            else:
-                y_pred = NN.predict2(X_test)
-
-            print ("gamma =", gamma)
-            print ("lmbd = ", lmbd)
-            accuracy = np.mean(y_pred == y_test[:,0])
-
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
-                best_neurons = neurons_per_layer
-                best_lmbd = lmbd
-                best_gamma = gamma
-
-            print ("accuracy =", accuracy, "best =", best_accuracy, best_neurons, best_lmbd)
-            print ("best =", best_accuracy, "with", best_neurons, "lmbd =", best_lmbd, "gamma =", best_gamma)
-            print ("--------------\n")
-
-    return best_accuracy, best_lmbd, best_gamma
 
 def input_image_predict(filename):
     im = io.imread(("%s.png" % filename), as_gray=True)

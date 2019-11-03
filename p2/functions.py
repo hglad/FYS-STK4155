@@ -248,9 +248,9 @@ class NeuralNet:
 
 
     def back_propagation(self):
-        if self.type == 'reg':
-            delta_L = self.a_output - self.y   # error in output layer
         if self.type == 'class':
+            delta_L = self.a_output - self.y   # error in output layer
+        if self.type == 'reg':
             delta_L = metrics.mean_squared_error(self.y, self.a_output, multioutput='raw_values')
 
         # print (delta_L)
@@ -266,6 +266,7 @@ class NeuralNet:
         for l in range(self.n_h_layers, 0, -1):
             # Use previous error to propagate error back to first hidden layer
             delta_h = np.matmul(delta_old, self.w[l].T) * self.activation_der(self.a[l], self.hidden_a_func[l-1])
+            # print (self.hidden_a_func[l-1])
             self.w_b_gradients(delta_h, l-1)
 
             # Optimize weights/biases
@@ -406,6 +407,8 @@ class NeuralNet:
         xtick = gammas
         ytick = params
         sb.heatmap(heatmap_array, annot=True, fmt="f", xticklabels=xtick, yticklabels=ytick)
+        plt.xlabel('learning rate $\gamma$')
+        plt.ylabel('penalty $\lambda$')
         plt.show()
 
     def return_params(self):

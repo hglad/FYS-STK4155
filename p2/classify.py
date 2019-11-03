@@ -27,10 +27,10 @@ def main_NN():
     output_a_func = 'softmax'
 
     n_params = 5
-    n_gammas = 4
+    n_gammas = 3
     params = np.zeros(n_params)
     params[1:] = np.logspace(1, -2, n_params-1)
-    gammas = np.logspace(-2, -5, n_gammas)
+    gammas = np.logspace(-4, -6, n_gammas)
 
     print(params)
     print(gammas)
@@ -46,7 +46,7 @@ def main_NN():
     train_single_NN = False
 
     if train_single_NN == True:
-        NN = NeuralNet(X_train, y_train, [48, 32], ['sigmoid', 'sigmoid'], 'softmax')
+        NN = NeuralNet(X_train, y_train, [32, 32], ['tanh', 'relu'], 'softmax')
         NN.train(iters, gamma, lmbd=lmbd)
 
         if n_categories == 1:
@@ -66,8 +66,9 @@ def main_NN():
         # show_misclassified(X_test, y_test, y_pred)
 
     # exit()
-    NN_grid = NeuralNet(X_train, y_train, [32, 16], ['tanh', 'sigmoid'], 'softmax')
-    NN_grid.grid_search(X_test, y_test, params, gammas, [32, 16])
+    config = [48,16]
+    NN_grid = NeuralNet(X_train, y_train, config, ['tanh', 'relu'], 'softmax')
+    NN_grid.grid_search(X_test, y_test, params, gammas, config)
 
     # Iterate over multiple hidden layer configurations
     # for i in range(1, 6):

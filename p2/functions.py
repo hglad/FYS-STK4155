@@ -93,9 +93,15 @@ def ConfMatrix(y, y_pred):
 
 
 class NeuralNet:
-    def __init__(self, X, y, neuron_lengths, hidden_a_func=['sigmoid', 'tanh'], output_a_func='softmax'):
+    def __init__(self, X, y, neuron_lengths, hidden_a_func=['sigmoid', 'tanh'], output_a_func='softmax', type='class'):
         self.X = X
-        self.n_categories = np.max(y+1)
+        self.type = type
+
+        if (type == 'class'):
+            self.n_categories = np.max(y+1)
+        if (type == 'reg'):
+            self.n_categories = 1
+
         self.hidden_a_func = hidden_a_func
         self.output_a_func = output_a_func
 
@@ -232,7 +238,7 @@ class NeuralNet:
 
         self.a_output = self.activation(self.z[-1], self.output_a_func)
         self.a[-1] = self.a_output
-    
+
 
     def w_b_gradients(self, delta, l):
         self.b_grad = np.sum(delta, axis=0)
@@ -242,7 +248,12 @@ class NeuralNet:
 
 
     def back_propagation(self):
-        delta_L = self.a_output - self.y   # error in output layer
+        if self.type == 'reg':
+            delta_L = self.a_output - self.y   # error in output layer
+        if self.type == 'class':
+            delta_L = metrics.mean_squared_error(self.y, self.a_output, multioutput='raw_values')
+
+        # print (delta_L)
         total_loss = np.mean(delta_L)
 
         # Output layer
@@ -331,9 +342,9 @@ class NeuralNet:
         return y_pred
 
 
-    def predict_single_output_neuron(self, X_test, y_test):
+    def predict_single_output_neuron(self, X_test):
         self.a[0] = X_test
-        self.y_test = y_test
+        # self.y_test = y_test
         self.feed_forward()
         y_pred = np.zeros(X_test.shape[0])
 
@@ -344,6 +355,14 @@ class NeuralNet:
             else:
                 y_pred[i] = 0
 
+        return y_pred
+
+
+    def predict_regression(self, X_test):
+        self.a[0] = X_test
+        # self.y_test = y_test
+        self.feed_forward()
+        y_pred = self.a_output
         return y_pred
 
 
@@ -466,11 +485,6 @@ def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
 
         norm = np.linalg.norm(new_beta - beta)
 
-        # if (abs(norm) < 1e-12):
-        #     gamma *= 1.01
-        # if (abs(norm) > 0):
-        #     gamma *= 0.99
-
         beta = new_beta
         # print (norm)
         if (norm < 1e-10):
@@ -529,7 +543,34 @@ def my_logreg(X_train, X_test, y_train, y_test):
         # plt.plot(y_pred, '-bo')
         # plt.show()
 
+def FrankeFunction(x,y):
+    term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
+    term2 = 0.75*np.exp(-((9*x+1)**2)/49.  - 0.1*(9*y+1))
+    term3 = 0.50*np.exp(-(9*x-7)**2 / 4.   - 0.25*((9*y-3)**2))
+    term4 = -0.2*np.exp(-(9*x-4)**2        - (9*y-7)**2)
 
+    return term1 + term2 + term3 + term4
+
+
+
+def Franke_dataset(n, noise=0.5):
+    # Generate dataset from Franke function with given noise
+    x = np.linspace(0, 1, n)
+    y = np.linspace(0, 1, n)
+    # Create X
+    X = np.zeros((n*n, 2))
+
+    for i in range(n):
+        for j in range(n):
+            X[i+j] = [x[i], y[j]]
+
+    x, y = np.meshgrid(x,y)
+
+    eps = np.asarray([np.random.normal(0,noise,n*n)])
+    eps = np.reshape(eps, (n,n))
+    z = FrankeFunction(x,y) + eps
+
+    return X, x, y, z
 
 
 

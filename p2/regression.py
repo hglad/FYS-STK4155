@@ -12,7 +12,7 @@ def main_NN():
 
     # Determine dataset to analyze
     if (dataset == 'Franke'):
-        X, x, y, z = Franke_dataset(n, noise=0.0)
+        X, x_grid, y_grid, z = Franke_dataset(n, noise=0.0)
         z = np.reshape(z, (n*n, 1))
 
     else:
@@ -23,7 +23,7 @@ def main_NN():
         ny = len(z[:,0])
         x = np.linspace(0,1,nx)
         y = np.linspace(0,1,ny)
-        x, y = np.meshgrid(x, y)
+        x_grid, y_grid = np.meshgrid(x, y)
 
 
     iters = 5000
@@ -65,8 +65,8 @@ def main_NN():
         print(z_pred.shape)
         print(z_train.shape)
 
-        plot_surf(x,y,z_pred.reshape(n,n), cm.coolwarm)
-        plot_surf(x,y,z_train.reshape(n,n), cm.gray, alpha=0.5)
+        plot_surf(x_grid, y_grid, z_pred.reshape(n,n), cm.coolwarm)
+        plot_surf(x_grid, y_grid, z_train.reshape(n,n), cm.gray, alpha=0.5)
         plt.show()
 
         # plt.imshow(z_pred.reshape(n,n))

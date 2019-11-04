@@ -34,13 +34,12 @@ def main_NN():
     print(params)
     print(gammas)
 
-    neuron_lengths_h1 = np.arange(10, 33)
-    neuron_lengths_h2 = np.arange(8, 25)
-    neuron_lengths_h3 = np.arange(0, 1)
+    # neuron_lengths_h1 = np.arange(10, 33)
+    # neuron_lengths_h2 = np.arange(8, 25)
+    # neuron_lengths_h3 = np.arange(0, 1)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
-
-    accuracy_scores = np.zeros(len(neuron_lengths_h1)*len(neuron_lengths_h2)*len(neuron_lengths_h3))
+    # accuracy_scores = np.zeros(len(neuron_lengths_h1)*len(neuron_lengths_h2)*len(neuron_lengths_h3))
 
     train_single_NN = True
 
@@ -55,7 +54,7 @@ def main_NN():
 
         equal = (y_pred == y_test[:,0]).astype(int)
         accuracy = np.mean(equal)
-
+        # exit()
         print ("gamma =", gamma)
         print ("lmbd =", lmbd)
         print ("accuracy =", accuracy)

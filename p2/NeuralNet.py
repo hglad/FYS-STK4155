@@ -117,6 +117,9 @@ class NeuralNet:
             x[inds] = 0
             t = x
 
+        elif (func == ''):
+            return x
+
         return t
 
 
@@ -124,16 +127,19 @@ class NeuralNet:
         if func == 'sigmoid':
             return x*(1 - x)
 
-        if func == 'tanh':
+        elif func == 'tanh':
             return 1 - x**2
 
-        if func == 'relu':
+        elif func == 'relu':
             inds1 = np.where(x > 0)
             inds2 = np.where(x <= 0)
             x[inds1] = 1
             x[inds2] = 0
             # print (t)
             return x
+
+        elif func == 'softmax':
+            return
 
     # @staticmethod
     # @jit
@@ -160,17 +166,16 @@ class NeuralNet:
         w_grad = np.matmul(self.a[l].T, delta)
         if self.lmbd > 0.0:
             w_grad += self.lmbd * self.w[l]
+
         return w_grad, b_grad
 
 
     def back_propagation(self):
         if self.type == 'class':
-            delta_L = self.a_output - self.y   # error in output layer
+            delta_L = (self.a_output - self.y)   # error in output layer
         if self.type == 'reg':
             delta_L = self.a_output - self.y
             # delta_L = (self.y - self.a_output)**2
-
-        total_loss = np.mean(delta_L)
 
         # Output layer
         w_grad, b_grad = self.w_b_gradients(delta_L, self.n_h_layers)
@@ -205,6 +210,7 @@ class NeuralNet:
         self.iters = iters
 
         for i in range(iters):
+            # print (i)
             self.feed_forward()
             self.back_propagation()
 
@@ -221,6 +227,8 @@ class NeuralNet:
             X_test = np.reshape(X_test, (n,1))
             y_pred = np.argmax(self.a_output)
 
+        # print (self.a[-1].shape)
+        # print ("here", y_pred.shape)
         return y_pred
 
 
@@ -282,7 +290,7 @@ class NeuralNet:
 
         xtick = gammas
         ytick = params
-        sb.heatmap(heatmap_array, annot=True, fmt="f", xticklabels=xtick, yticklabels=ytick)
+        sb.heatmap(heatmap_array, annot=True, fmt="g", xticklabels=xtick, yticklabels=ytick)
         plt.xlabel('learning rate $\gamma$')
         plt.ylabel('penalty $\lambda$')
         plt.show()

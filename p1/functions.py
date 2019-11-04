@@ -146,6 +146,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 			R2_sum += metrics.r2_score(z_true_test_1d, z_pred_test)
 			MSE_test += metrics.mean_squared_error(z_true_test_1d, z_pred_test)
 			MSE_train += metrics.mean_squared_error(z_true_train_1d, z_pred_train)
+			
 		else:
 			R2_sum += metrics.r2_score(z_test_1d, z_pred_test)
 			MSE_test += metrics.mean_squared_error(z_test_1d, z_pred_test)

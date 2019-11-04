@@ -228,18 +228,21 @@ def Franke_dataset(n, noise=0.5):
     # Generate dataset from Franke function with given noise
     x = np.linspace(0, 1, n)
     y = np.linspace(0, 1, n)
-    # Create X
+
+    # Create X, z
     X = np.zeros((n*n, 2))
+    z = np.zeros(n*n)
+    eps = np.asarray([np.random.normal(0,noise,n*n)])
+    eps = np.reshape(eps, (n,n))
 
     for i in range(n):
         for j in range(n):
             X[i+j] = [x[i], y[j]]
+            z[i+j] = FrankeFunction(x[i],y[j]) + eps[i,j]
 
     x, y = np.meshgrid(x,y)
-
-    eps = np.asarray([np.random.normal(0,noise,n*n)])
-    eps = np.reshape(eps, (n,n))
-    z = FrankeFunction(x,y) + eps
+    print (X.shape)
+    # z = FrankeFunction(x,y) + eps
     z = z/np.max(z)
 
     return X, x, y, z

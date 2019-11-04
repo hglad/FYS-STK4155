@@ -232,21 +232,33 @@ def Franke_dataset(n, noise=0.5):
     # Create X, z
     X = np.zeros((n*n, 2))
     z = np.zeros(n*n)
+    print (X.shape)
     eps = np.asarray([np.random.normal(0,noise,n*n)])
     eps = np.reshape(eps, (n,n))
 
     for i in range(n):
         for j in range(n):
-            X[i+j] = [x[i], y[j]]
-            z[i+j] = FrankeFunction(x[i],y[j]) + eps[i,j]
+            X[i*n + j] = [x[i], y[j]]
+            z[i*n + j] = FrankeFunction(x[i],y[j]) + eps[i,j]
 
     x, y = np.meshgrid(x,y)
-    print (X.shape)
-    # z = FrankeFunction(x,y) + eps
     z = z/np.max(z)
 
     return X, x, y, z
 
+
+def plot_surf(x,y,z, color, alpha=1):
+	# Framework for 3D plotting
+	# fig = plt.figure()
+	ax = plt.gca(projection='3d')
+
+	ax.set_xlabel('$x$', fontsize=20)
+	ax.set_ylabel('$y$', fontsize=20)
+	ax.set_zlabel('$z$', fontsize=20)
+	surf = ax.plot_surface(x, y, z, cmap=color, linewidth=0, antialiased=False, alpha=alpha, shade=True)
+
+	# Add a color bar which maps values to colors
+	# fig.colorbar(surf, shrink=0.5, aspect=5)
 
 
 

@@ -27,11 +27,11 @@ def main_NN():
 
 
     iters = 5000
-    lmbd = 0; gamma = 1e-4
+    lmbd = 0; gamma = 1e-5
 
     n_categories = 1
-    hidden_a_func = ['tanh']
-    output_a_func = ''
+    hidden_a_func = ['tanh', 'relu', 'tanh']
+    output_a_func = 'sigmoid'
 
     n_params = 5
     n_gammas = 4
@@ -42,14 +42,14 @@ def main_NN():
     print(params)
     print(gammas)
 
-    X_train, X_test, z_train, z_test = train_test_split(X, z, test_size=0.2, random_state=123)
+    # X_train, X_test, z_train, z_test = train_test_split(X, z, test_size=0.2, random_state=123)
     X_train = X
     z_train = z
 
     train_single_NN = True
 
     if train_single_NN == True:
-        NN = NeuralNet(X_train, z_train, [2], hidden_a_func, output_a_func, 'reg')
+        NN = NeuralNet(X_train, z_train, [8,4,2], hidden_a_func, output_a_func, 'reg')
         NN.train(iters, gamma, lmbd=lmbd)
         z_pred = NN.predict_regression(X_train)
 
@@ -65,14 +65,15 @@ def main_NN():
         print(z_pred.shape)
         print(z_train.shape)
 
-        # plt.imshow(z_pred.reshape(int(n),int(n)))
+        plot_surf(x,y,z_pred.reshape(n,n), cm.coolwarm)
+        plot_surf(x,y,z_train.reshape(n,n), cm.gray, alpha=0.5)
+        plt.show()
+
+        # plt.imshow(z_pred.reshape(n,n))
         # plt.show()
-
-        plt.imshow(z_pred.reshape(n,n))
-        plt.show()
-
-        plt.imshow(z_train.reshape(n,n))
-        plt.show()
+        #
+        # plt.imshow(z_train.reshape(n,n))
+        # plt.show()
 
     exit()
 

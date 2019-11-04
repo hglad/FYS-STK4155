@@ -248,7 +248,6 @@ def Franke_dataset(n, noise=0.5):
 
 def get_grid(X):
     n, m = X.shape
-    print (n)
     n_grid = int(np.sqrt(n))
     x = np.zeros((n_grid,n_grid))
     y = np.zeros((n_grid,n_grid))
@@ -258,8 +257,6 @@ def get_grid(X):
             x[i,j], y[i,j] = X[i*n_grid + j]
 
     x_grid, y_grid = np.meshgrid(x,y)
-    print (x_grid)
-    print (y_grid)
 
     return x, y
 

@@ -92,329 +92,6 @@ def ConfMatrix(y, y_pred):
     plt.show()
 
 
-class NeuralNet:
-    def __init__(self, X, y, neuron_lengths, hidden_a_func=['sigmoid', 'tanh'], output_a_func='softmax', type='class'):
-        self.X = X
-        self.type = type
-
-        if (type == 'class'):
-            self.n_categories = np.max(y+1)
-        if (type == 'reg'):
-            self.n_categories = 1
-
-        self.hidden_a_func = hidden_a_func
-        self.output_a_func = output_a_func
-
-        if self.n_categories > 1:
-            onehotencoder = OneHotEncoder(categories="auto", sparse=False)
-
-            y = ColumnTransformer(
-                [("", onehotencoder, [0]),],
-                remainder="passthrough"
-            ).fit_transform(y)
-
-        self.y = y
-        self.iters_done = 0
-
-        if len(X.shape) > 1:
-            self.n_train, self.m_train  = X.shape
-
-        # Special case for a single training point
-        else:
-            self.X = np.reshape(X, (1, len(X)))
-            self.y = np.reshape(y, (1,1))
-            self.n_train = 1
-            self.m_train = len(X)
-
-        # Used for grid search function
-        self.best_accuracy = -1
-        self.best_config = []
-        self.best_gamma = 0
-        self.best_lmbd = 0
-
-        # create structure of activations, weight and bias arrays
-        self.create_structure(neuron_lengths)
-        self.print_properties()
-
-
-    def print_properties(self):
-        print ("----Neural network----")
-        print (self.m_train, "input values")
-        print (self.n_h_layers, "hidden layers")
-        print (self.n_h_neurons, "neurons per hidden layer")
-        print (self.n_categories, "output categories\n")
-
-
-    def create_structure(self, neuron_lengths):
-        np.random.seed(1)
-        # Do not include layers that have 0 neurons
-        self.n_h_neurons = []
-        for layer in neuron_lengths:
-            if (layer != 0):
-                self.n_h_neurons.append(layer)
-
-        self.n_h_layers = len(self.n_h_neurons)
-
-        self.a = np.empty(self.n_h_layers+2, dtype=np.ndarray)
-        self.z = np.empty(self.n_h_layers+1, dtype=np.ndarray)
-        self.w = np.empty(self.n_h_layers+1, dtype=np.ndarray)
-        self.b = np.empty(self.n_h_layers+1, dtype=np.ndarray)
-
-        self.a[0] = self.X
-
-        # Input layer -> first hidden layer weights
-        self.w[0] = np.random.uniform(-1, 1, (self.m_train, self.n_h_neurons[0]))
-
-        # Hidden layers
-        for l in range(self.n_h_layers):
-            self.b[l] = np.random.uniform(-0.01, 0.01, (self.n_h_neurons[l]))
-            self.a[l+1] = np.zeros(self.n_h_neurons[l])
-            self.z[l+1] = np.zeros(self.n_h_neurons[l])
-
-        # Hidden layers (weights)
-        for l in range(1, self.n_h_layers):
-            self.w[l] = np.random.uniform(-1, 1, (self.n_h_neurons[l-1], self.n_h_neurons[l]))
-
-        self.b[-1] = np.random.uniform(-0.01, 0.01,(self.n_categories))
-        self.w[-1] = np.random.uniform(-1, 1, (self.n_h_neurons[-1], self.n_categories))
-        self.a[-1] = np.zeros(self.n_categories)  # Output layer
-        self.z[-1] = np.zeros(self.n_categories)
-
-
-    def activation(self, x, func):
-        if (func == 'sigmoid'):
-            t = 1./(1 + np.exp(-x))
-
-        elif (func == 'softmax'):
-            if len(x.shape) > 1:
-                exp_term = np.exp(x)
-                t = exp_term / np.sum(exp_term, axis=1, keepdims=True)
-            else:
-                exp_term = np.exp(x)
-                t = exp_term / np.sum(exp_term)
-
-        elif (func == 'tanh'):
-            t = np.tanh(x)
-
-        elif (func == 'relu'):
-            inds = np.where(x < 0)
-            x[inds] = 0
-            t = x
-
-        return t
-
-
-    def activation_der(self, x, func):
-        if func == 'sigmoid':
-            return x*(1 - x)
-
-        if func == 'tanh':
-            return 1 - x**2
-
-        if func == 'relu':
-            inds1 = np.where(x > 0)
-            inds2 = np.where(x <= 0)
-            x[inds1] = 1
-            x[inds2] = 0
-            # print (t)
-            return x
-
-    # @staticmethod
-    # @jit
-    def feed_forward(self):
-        """
-        activation in hidden layer: take sigmoid of weighted input,
-        a_l = sigmoid( (weights*previous activation) + bias )
-        first activation in NN is the input data
-        """
-        # Iterate through hidden layers
-        for l in range(1, self.n_h_layers+1):
-            self.z[l] = np.matmul(self.a[l-1], self.w[l-1]) + self.b[l-1]
-            self.a[l] = self.activation(self.z[l], self.hidden_a_func[l-1])
-
-        # Output layer
-        # print (self.
-        self.z[-1] = np.matmul(self.a[-2], self.w[-1]) + self.b[-1]
-
-        self.a_output = self.activation(self.z[-1], self.output_a_func)
-        self.a[-1] = self.a_output
-
-
-    def w_b_gradients(self, delta, l):
-        self.b_grad = np.sum(delta, axis=0)
-        self.w_grad = np.matmul(self.a[l].T, delta)
-        if self.lmbd > 0.0:
-            self.w_grad += self.lmbd * self.w[l]
-
-
-    def back_propagation(self):
-        if self.type == 'class':
-            delta_L = self.a_output - self.y   # error in output layer
-        if self.type == 'reg':
-            delta_L = metrics.mean_squared_error(self.y, self.a_output, multioutput='raw_values')
-
-        # print (delta_L)
-        total_loss = np.mean(delta_L)
-
-        # Output layer
-        self.w_b_gradients(delta_L, self.n_h_layers)
-        self.w[-1] -= self.gamma * self.w_grad
-        self.b[-1] -= self.gamma * self.b_grad
-
-        delta_old = delta_L
-
-        for l in range(self.n_h_layers, 0, -1):
-            # Use previous error to propagate error back to first hidden layer
-            delta_h = np.matmul(delta_old, self.w[l].T) * self.activation_der(self.a[l], self.hidden_a_func[l-1])
-            # print (self.hidden_a_func[l-1])
-            self.w_b_gradients(delta_h, l-1)
-
-            # Optimize weights/biases
-            self.w[l-1] -= self.gamma * self.w_grad
-            self.b[l-1] -= self.gamma * self.b_grad
-
-            delta_old = delta_h
-
-        self.iters_done += 1
-        # sys.stdout.write('iter %d / %d , loss %1.3e \r' % (self.iters_done, self.iters, total_loss))
-        # sys.stdout.flush()
-
-
-    def train(self, iters=10000, gamma=1e-3, lmbd=0):
-        """
-        Perform feed-forward and back propagation for given number of iterations
-        """
-        self.gamma = gamma
-        self.lmbd = lmbd
-        self.iters = iters
-
-        for i in range(iters):
-            self.feed_forward()
-            self.back_propagation()
-
-
-    def predict(self, X_test):
-        """
-        Predict outcome using the trained NN. The activation layers are changed
-        according to the input data X.
-        """
-        if len(X_test.shape) > 1:
-            n, m = X_test.shape
-        else:
-            n = 1
-            m = len(X_test)
-
-        self.a[0] = X_test
-        self.feed_forward()
-        print ("")
-        y_pred = (np.zeros(n)).astype(int)
-
-        # Find activation with highest value in output layer
-        if len(self.a_output.shape) > 1:
-            for i in range(n):
-                highest_p = np.argmax(self.a_output[i,:])       # 0 or 1
-                # print (self.a_output[i,:])
-                y_pred[i] = int(highest_p)
-                # print (y_pred[i], self.y[i], type(y_pred[i]))
-        else:
-            # Special case for a single testing point
-            for i in range(n):
-                highest_p = np.argmax(self.a_output)       # 0 or 1
-                y_pred[i] = int(highest_p)
-
-        return y_pred
-
-
-    def predict2(self, X_test):
-        self.a[0] = X_test
-        self.feed_forward()
-
-        if len(X_test.shape) > 1:
-            n, m = X_test.shape
-            y_pred = np.argmax(self.a_output, axis=1)
-        else:
-            n = len(X_test)
-            X_test = np.reshape(X_test, (n,1))
-            y_pred = np.argmax(self.a_output)
-
-        # for i in range(len(X_test)):
-        #     print (y_test[i], y_pred[i], self.a_output[i])
-
-        return y_pred
-
-
-    def predict_single_output_neuron(self, X_test):
-        self.a[0] = X_test
-        # self.y_test = y_test
-        self.feed_forward()
-        y_pred = np.zeros(X_test.shape[0])
-
-        for i in range(X_test.shape[0]):
-            # print (self.a_output[i], self.y_test[i,0])
-            if self.a_output[i] > 0.5:
-                y_pred[i] = 1
-            else:
-                y_pred[i] = 0
-
-        return y_pred
-
-
-    def predict_regression(self, X_test):
-        self.a[0] = X_test
-        # self.y_test = y_test
-        self.feed_forward()
-        y_pred = self.a_output
-        return y_pred
-
-
-    def grid_search(self, X_test, y_test, params, gammas, *config):
-        """
-        Function used for determining best combination of learning rate, penalty and
-        neuron configuration.
-        """
-        config = config[0]
-        heatmap_array = np.zeros((len(params), len(gammas)))
-        i = 0
-        for lmbd in params:
-            j = 0
-            for gamma in gammas:
-                self.create_structure(config)
-                self.print_properties()
-                self.train(iters=3000, gamma=gamma, lmbd=lmbd)
-
-                if self.n_categories == 1:
-                    y_pred = self.predict_single_output_neuron(X_test)
-                else:
-                    y_pred = self.predict2(X_test)
-
-                print ("gamma =", gamma)
-                print ("lmbd = ", lmbd)
-                accuracy = np.mean(y_pred == y_test[:,0])
-                heatmap_array[i, j] = accuracy
-
-                if accuracy > self.best_accuracy:
-                    self.best_accuracy = accuracy
-                    self.best_config = config
-                    self.best_lmbd = lmbd
-                    self.best_gamma = gamma
-
-                print ("accuracy =", accuracy)
-                print ("best =", self.best_accuracy, "with", self.best_config, "lmbd =", self.best_lmbd, "gamma =", self.best_gamma)
-                print ("--------------\n")
-                j += 1
-            i += 1
-
-        xtick = gammas
-        ytick = params
-        sb.heatmap(heatmap_array, annot=True, fmt="f", xticklabels=xtick, yticklabels=ytick)
-        plt.xlabel('learning rate $\gamma$')
-        plt.ylabel('penalty $\lambda$')
-        plt.show()
-
-    def return_params(self):
-        return self.best_accuracy, self.best_config, self.best_lmbd, self.best_gamma
-
-
 def input_image_predict(filename):
     im = io.imread(("%s.png" % filename), as_gray=True)
     im = im/np.max(im)
@@ -462,7 +139,6 @@ def logreg_sklearn(X_train, X_test, y_train, y_test):
 
 
 def total_cost(n, y, p, beta):
-    # tot_cost = -(1./n)*np.sum( y_train*np.log(p) + (1 - y_train)*np.log(1 - np.log(p)))
     tot_cost = -np.sum(y*beta - np.log(1 + np.exp(y*beta)))
     return tot_cost
 
@@ -489,7 +165,6 @@ def gradient_descent(x, beta, y, iters=100, gamma=1e-2):
         norm = np.linalg.norm(new_beta - beta)
 
         beta = new_beta
-        # print (norm)
         if (norm < 1e-10):
             return beta, norm
 
@@ -504,7 +179,6 @@ def my_logreg(X_train, X_test, y_train, y_test):
     # X[samples, features]
     n = X_train.shape[0]                    # number of training samples
     m = X_train.shape[1]                    # number of features
-    # m = len(X[0])
     iters = 500000
     # gamma = 1e-8
     # beta_0 = np.random.uniform(-10000,10000,m)         # random initial weights
@@ -540,11 +214,6 @@ def my_logreg(X_train, X_test, y_train, y_test):
         # plt.xlabel('Predicted value')
         # plt.show()
 
-        # plt.plot(opt_beta, '-ro')
-        # plt.show()
-        #
-        # plt.plot(y_pred, '-bo')
-        # plt.show()
 
 def FrankeFunction(x,y):
     term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
@@ -553,7 +222,6 @@ def FrankeFunction(x,y):
     term4 = -0.2*np.exp(-(9*x-4)**2        - (9*y-7)**2)
 
     return term1 + term2 + term3 + term4
-
 
 
 def Franke_dataset(n, noise=0.5):
@@ -572,6 +240,7 @@ def Franke_dataset(n, noise=0.5):
     eps = np.asarray([np.random.normal(0,noise,n*n)])
     eps = np.reshape(eps, (n,n))
     z = FrankeFunction(x,y) + eps
+    z = z/np.max(z)
 
     return X, x, y, z
 

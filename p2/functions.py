@@ -246,19 +246,38 @@ def Franke_dataset(n, noise=0.5):
 
     return X, x, y, z
 
+def get_grid(X):
+    n, m = X.shape
+    print (n)
+    n_grid = int(np.sqrt(n))
+    x = np.zeros((n_grid,n_grid))
+    y = np.zeros((n_grid,n_grid))
+
+    for i in range(n_grid):
+        for j in range(n_grid):
+            x[i,j], y[i,j] = X[i*n_grid + j]
+
+    x_grid, y_grid = np.meshgrid(x,y)
+    print (x_grid)
+    print (y_grid)
+
+    return x, y
+
+
 
 def plot_surf(x,y,z, color, alpha=1):
-	# Framework for 3D plotting
-	# fig = plt.figure()
-	ax = plt.gca(projection='3d')
+    print (x.shape, y.shape, z.shape)
+    # Framework for 3D plotting
+    # fig = plt.figure()
+    ax = plt.gca(projection='3d')
 
-	ax.set_xlabel('$x$', fontsize=20)
-	ax.set_ylabel('$y$', fontsize=20)
-	ax.set_zlabel('$z$', fontsize=20)
-	surf = ax.plot_surface(x, y, z, cmap=color, linewidth=0, antialiased=False, alpha=alpha, shade=True)
+    ax.set_xlabel('$x$', fontsize=20)
+    ax.set_ylabel('$y$', fontsize=20)
+    ax.set_zlabel('$z$', fontsize=20)
+    surf = ax.plot_surface(x, y, z, cmap=color, linewidth=0, antialiased=False, alpha=alpha, shade=True)
 
-	# Add a color bar which maps values to colors
-	# fig.colorbar(surf, shrink=0.5, aspect=5)
+    # Add a color bar which maps values to colors
+    # fig.colorbar(surf, shrink=0.5, aspect=5)
 
 
 

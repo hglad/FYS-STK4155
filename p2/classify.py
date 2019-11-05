@@ -20,10 +20,10 @@ def main_NN():
     X, y = load_dataset(dataset)
     n, m = X.shape
 
-    iters = 5000
-    lmbd = 0; gamma = 5e-6
+    iters = 3000
+    lmbd = 0; gamma = 1e-4
 
-    n_categories = 10
+    n_categories = 1
 
     n_params = 7
     n_gammas = 5
@@ -42,9 +42,9 @@ def main_NN():
     # accuracy_scores = np.zeros(len(neuron_lengths_h1)*len(neuron_lengths_h2)*len(neuron_lengths_h3))
 
     train_single_NN = True
-
+    config = [10]
     if train_single_NN == True:
-        NN = NeuralNet(X_train, y_train, [32], ['relu'], 'softmax')
+        NN = NeuralNet(X_train, y_train, config, ['tanh'], 'sigmoid')
         NN.train(iters, gamma, lmbd=lmbd)
 
         if n_categories == 1:
@@ -54,18 +54,18 @@ def main_NN():
 
         equal = (y_pred == y_test[:,0]).astype(int)
         accuracy = np.mean(equal)
-        # exit()
+        roc_score = metrics.roc_auc_score(y_test, y_pred)
         print ("gamma =", gamma)
         print ("lmbd =", lmbd)
         print ("accuracy =", accuracy)
+        print ("roc score =", roc_score)
         print ("--------------\n")
 
         # ConfMatrix(y_test, y_pred)
         # show_misclassified(X_test, y_test, y_pred)
 
-    # exit()
-    config = [32,32]
-    NN_grid = NeuralNet(X_train, y_train, config, ['tanh', 'relu'], 'softmax')
+
+    NN_grid = NeuralNet(X_train, y_train, config, ['tanh'], 'sigmoid')
     NN_grid.grid_search(X_test, y_test, params, gammas, config)
 
     # Iterate over multiple hidden layer configurations

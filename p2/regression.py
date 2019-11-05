@@ -12,7 +12,7 @@ def main_NN():
 
     # Determine dataset to analyze
     if (dataset == 'Franke'):
-        X, x_grid, y_grid, z = Franke_dataset(n, noise=0.25)
+        X, x_grid, y_grid, z = Franke_dataset(n, noise=0.1)
         z = np.reshape(z, (n*n, 1))
     else:
         z_full = DataImport('Norway_1arc.tif', sc=20)
@@ -29,7 +29,7 @@ def main_NN():
     lmbd = 0.0; gamma = 1e-5
 
     n_categories = 1
-    hidden_a_func = ['tanh', 'relu']
+    hidden_a_func = ['tanh','tanh']
     output_a_func = ''
 
     n_params = 5
@@ -54,8 +54,8 @@ def main_NN():
 
     if train_single_NN == True:
         # config = [4,16,4]
-        # config = [64,16,2]
-        config = [32,32]
+        config = [80,80]
+        # config = [16,8,4]
         NN = NeuralNet(X_train, z_train, config, hidden_a_func, output_a_func, 'reg')
         NN.train(iters, gamma, lmbd=lmbd)
         z_pred = NN.predict_regression(X_test)
@@ -63,10 +63,12 @@ def main_NN():
         r2_score = metrics.r2_score(z_test, z_pred)
         mse = metrics.mean_squared_error(z_test, z_pred)
 
+
         print ("gamma =", gamma)
         print ("lmbd =", lmbd)
         print ("r2 =", r2_score)
         print ("mse =", mse)
+
         print ("--------------\n")
 
 

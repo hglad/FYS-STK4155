@@ -68,16 +68,17 @@ def load_dataset(dataset):
             i += 1
 
     if dataset == 2: # breast cancer data
-        from sklearn.datasets import load_digits
-        data = load_digits()
+        from sklearn.datasets import load_breast_cancer
+        data = load_breast_cancer()
         X = data.data
         y = data.target
 
         y = np.reshape(y, (len(y), 1))
-        # X = scaler.fit_transform(X)
+        X = scaler.fit_transform(X)
+
         n, m = X.shape
-        for i in range(n):
-            X[i,:] = X[i,:]/np.max(X[i,:])
+        # for j in range(m):
+        #     X[:,j] = X[:,j]/np.max(X[:,j])
 
     return X, y
 

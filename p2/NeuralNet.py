@@ -11,6 +11,9 @@ class NeuralNet:
 
         if (type == 'class'):
             self.n_categories = np.max(y+1)
+            if output_a_func == 'sigmoid':
+                self.n_categories = 1
+
         if (type == 'reg'):
             self.n_categories = 1
 
@@ -135,7 +138,7 @@ class NeuralNet:
             inds2 = np.where(x <= 0)
             x[inds1] = 1
             x[inds2] = 0
-            # print (t)
+
             return x
 
         elif func == 'softmax':
@@ -144,8 +147,7 @@ class NeuralNet:
         elif func == '':
             return 1
 
-    # @staticmethod
-    # @jit
+
     def feed_forward(self):
         """
         activation in hidden layer: take sigmoid of weighted input,
@@ -175,7 +177,7 @@ class NeuralNet:
 
     def back_propagation(self):
         if self.type == 'class':
-            delta_L = (self.a_output - self.y) # error in output layer
+            delta_L = self.activation_der(self.a[-1], self.output_a_func)*(self.a_output - self.y) # error in output layer
         if self.type == 'reg':
             delta_L = self.a_output - self.y
 
@@ -213,7 +215,6 @@ class NeuralNet:
         self.iters = iters
 
         for i in range(iters):
-            # print (i)
             self.feed_forward()
             self.back_propagation()
 
@@ -230,32 +231,25 @@ class NeuralNet:
             X_test = np.reshape(X_test, (n,1))
             y_pred = np.argmax(self.a_output)
 
-        # print (self.a[-1].shape)
-        # print ("here", y_pred.shape)
         return y_pred
 
 
     def predict_single_output_neuron(self, X_test):
         self.a[0] = X_test
-        # self.y_test = y_test
         self.feed_forward()
         y_pred = np.zeros(X_test.shape[0])
-
-        for i in range(X_test.shape[0]):
-            # print (self.a_output[i], self.y_test[i,0])
-            if self.a_output[i] > 0.5:
-                y_pred[i] = 1
-            else:
-                y_pred[i] = 0
+        # For loop because vectorized version behaved strangely
+        for i in range(len(self.a_output)):
+            y_pred[i] = np.round(self.a_output[i])
 
         return y_pred
 
 
     def predict_regression(self, X_test):
         self.a[0] = X_test
-        # self.y_test = y_test
         self.feed_forward()
         y_pred = self.a_output
+
         return y_pred
 
 

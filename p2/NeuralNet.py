@@ -139,7 +139,10 @@ class NeuralNet:
             return x
 
         elif func == 'softmax':
-            return
+            return 1
+
+        elif func == '':
+            return 1
 
     # @staticmethod
     # @jit
@@ -172,10 +175,9 @@ class NeuralNet:
 
     def back_propagation(self):
         if self.type == 'class':
-            delta_L = (self.a_output - self.y)   # error in output layer
+            delta_L = (self.a_output - self.y) # error in output layer
         if self.type == 'reg':
             delta_L = self.a_output - self.y
-            # delta_L = (self.y - self.a_output)**2
 
         # Output layer
         w_grad, b_grad = self.w_b_gradients(delta_L, self.n_h_layers)
@@ -188,6 +190,7 @@ class NeuralNet:
         for l in range(self.n_h_layers, 0, -1):
             # Use previous error to propagate error back to first hidden layer
             delta_h = np.matmul(delta_old, self.w[l].T) * self.activation_der(self.a[l], self.hidden_a_func[l-1])
+            # delta_h = np.matmul(self.w[l].T, delta_old) *
             w_grad, b_grad = self.w_b_gradients(delta_h, l-1)
 
             # Optimize weights/biases

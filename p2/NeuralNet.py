@@ -5,7 +5,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score
 from sklearn.compose import ColumnTransformer
 
 class NeuralNet:
-    def __init__(self, X, y, neuron_lengths, hidden_a_func=['sigmoid', 'tanh'], output_a_func='softmax', type='class'):
+    def __init__(self, X, y, neuron_lengths=[16,8], hidden_a_func=['sigmoid', 'tanh'], output_a_func='softmax', type='class'):
         self.X = X
         self.type = type
 

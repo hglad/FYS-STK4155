@@ -180,7 +180,7 @@ def my_logreg(X_train, X_test, y_train, y_test):
     # X[samples, features]
     n = X_train.shape[0]                    # number of training samples
     m = X_train.shape[1]                    # number of features
-    iters = 500000
+    iters = 10000
     # gamma = 1e-8
     # beta_0 = np.random.uniform(-10000,10000,m)         # random initial weights
     # opt_beta, norm = gradient_descent(X_train, beta_0, y_train, iters, gamma)

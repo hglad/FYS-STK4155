@@ -91,19 +91,11 @@ def main_NN():
     # ConfMatrix(y[:,0], y_pred)
 
 if __name__ == '__main__':
-    main_NN()
-
-# dataset 1: 100 % accuracy, random_state=123, test_size=0.3
-# iters = 50000
-# gamma = 5e-2
-# beta_0 = np.random.uniform(-10000,10000,m)         # random initial weights
-
+    main()
+"""logreg"""
 # dataset 0:
 # Accuracy: 0.824912 (gamma = 1e-06, 500000 iters)
-# Correctly classified: 7053
-# Default classified as non-default: 1175
-# Non-default classified as default: 322
-
+# Accuracy: 0.82386 (gamma = 1e-05, 10000 iters)
 
 """NN"""
 # digits dataset

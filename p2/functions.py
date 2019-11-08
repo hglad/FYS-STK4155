@@ -236,16 +236,17 @@ def Franke_dataset(n, noise=0.5):
     print (X.shape)
     eps = np.asarray([np.random.normal(0,noise,n*n)])
     eps = np.reshape(eps, (n,n))
-
+    FF = np.zeros(n*n)
     for i in range(n):
         for j in range(n):
             X[i*n + j] = [x[i], y[j]]
-            z[i*n + j] = FrankeFunction(x[i],y[j]) + eps[i,j]
+            FF[i*n + j] = FrankeFunction(x[i],y[j])
+            z[i*n + j] = FF[i*n + j] + eps[i,j]
 
     x, y = np.meshgrid(x,y)
     z = z/np.max(z)
 
-    return X, x, y, z
+    return X, x, y, z, FF
 
 def get_grid(X):
     n, m = X.shape

@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score
 from sklearn.compose import ColumnTransformer
+from sklearn import metrics
 
 class NeuralNet:
     def __init__(self, X, y, neuron_lengths=[16,8], hidden_a_func=['sigmoid', 'tanh'], output_a_func='softmax', type='class'):
@@ -42,6 +43,7 @@ class NeuralNet:
             self.m_train = len(X)
 
         # Used for grid search function
+        self.best_mse = 1e10
         self.best_accuracy = -1
         self.best_config = []
         self.best_gamma = 0
@@ -253,7 +255,7 @@ class NeuralNet:
         return y_pred
 
 
-    def grid_search(self, X_test, y_test, params, gammas, *config):
+    def grid_search(self, X_test, y_test, params, gammas, type='class', *config):
         """
         Function used for determining best combination of learning rate, penalty and
         neuron configuration.
@@ -264,25 +266,44 @@ class NeuralNet:
             for j in range(len(gammas)):
                 self.create_structure(config)
                 self.train(iters=3000, gamma=gammas[j], lmbd=params[i])
-
-                if self.n_categories == 1:
-                    y_pred = self.predict_single_output_neuron(X_test)
-                else:
-                    y_pred = self.predict(X_test)
-
                 print ("gamma =", gammas[j])
                 print ("lmbd = ", params[i])
-                accuracy = np.mean(y_pred == y_test[:,0])
-                heatmap_array[i, j] = accuracy
 
-                if accuracy > self.best_accuracy:
-                    self.best_accuracy = accuracy
-                    self.best_config = config
-                    self.best_lmbd = params[i]
-                    self.best_gamma = gammas[j]
+                if type=='class':
+                    if self.n_categories == 1:
+                        y_pred = self.predict_single_output_neuron(X_test)
+                    else:
+                        y_pred = self.predict(X_test)
 
-                print ("accuracy =", accuracy)
-                print ("best =", self.best_accuracy, "with", self.best_config, "lmbd =", self.best_lmbd, "gamma =", self.best_gamma)
+                    accuracy = np.mean(y_pred == y_test[:,0])
+                    heatmap_array[i, j] = accuracy
+                    print ("accuracy =", accuracy)
+
+                    if accuracy > self.best_accuracy:
+                        self.best_accuracy = accuracy
+                        self.best_config = config
+                        self.best_lmbd = params[i]
+                        self.best_gamma = gammas[j]
+
+                    print ("best =", self.best_accuracy, "with", self.best_config, "lmbd =", self.best_lmbd, "gamma =", self.best_gamma)
+
+                if type=='reg':
+                    y_pred = self.predict_regression(X_test)
+                    r2_score = metrics.r2_score(y_test, y_pred)
+                    mse = metrics.mean_squared_error(y_test, y_pred)
+                    print ("mse:", mse)
+                    print ("r2:", r2_score)
+                    heatmap_array[i, j] = mse
+
+                    if mse < self.best_mse:
+                        self.best_mse = mse
+                        self.best_config = config
+                        self.best_lmbd = params[i]
+                        self.best_gamma = gammas[j]
+
+                    print ("best mse =", self.best_mse, "with", self.best_config, "lmbd =", self.best_lmbd, "gamma =", self.best_gamma)
+
+
                 print ("--------------\n")
 
         xtick = gammas

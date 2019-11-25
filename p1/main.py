@@ -23,7 +23,7 @@ def main():
 
     # Determine dataset to analyze
     if (dataset == 'Franke'):
-        x, y, z = Franke_dataset(n, noise=0.5)
+        x, y, z, z_true = Franke_dataset(n, noise=0.0)
         z_full = z
         nx = n
         ny = n
@@ -39,12 +39,18 @@ def main():
 
     z_1d = np.ravel(z)
 
+    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(x, y, z, test_size=0.3, random_state=123)
+    z_train_1d = np.ravel(z_train)
+    z_test_1d = np.ravel(z_test)
+    z_true_1d = np.ravel(z_true)
+    z_true_test_1d = np.ravel(FrankeFunction(x_test, y_test))
+
     # Define ranges for complexity and hyperparameters
     min_p = int(sys.argv[1]);  max_p = int(sys.argv[2])
-    polys = np.arange(min_p,max_p)
+    polys = np.arange(min_p, max_p)
 
-    min_param = 1e-6; max_param = 1e-1
-    n_params = 10
+    min_param = 1e-9; max_param = 1e-3
+    n_params = 7
 
     if (method == 'ols'):
         n_params = 1   # only run once for OLS, parameter value does not matter
@@ -64,10 +70,31 @@ def main():
     # Perform cross-validation with given set of polynomials and parameters
     for i in range(len(params)):
         for j in range(len(polys)):
+            X_train = CreateDesignMatrix_X(x_train, y_train, polys[j])
+            X_test = CreateDesignMatrix_X(x_test, y_test, polys[j])
+
+            len_beta = int((polys[j]+1)*(polys[j]+2)/2)
             sys.stdout.write('poly %d/%d, param %d/%d  \r' % (j+1,len(polys),i+1,len(params)))
             sys.stdout.flush()
 
-            R2_scores[j,i], MSE_test[j,i], MSE_train[j,i], error_test[j,i],  bias_test[j,i], var_test[j,i], error_train[j,i] = cross_validation(x, y, z, k=5, p=polys[j], dataset=dataset, param=params[i], method=method)
+            if (method == 'ols'):
+                beta = beta_ols(X_train, z_train_1d)
+                z_pred_test = X_test @ beta
+
+            if (method == 'ridge'):
+                beta = beta_ridge(X_train, z_train_1d, params[i], len_beta)
+                z_pred_test = X_test @ beta
+
+            if (method == 'lasso'):
+                model = linear_model.Lasso(alpha=params[i], fit_intercept=False, tol=0.01, max_iter=500000)
+                lasso = model.fit(X_train, z_train_1d)
+                z_pred_test = lasso.predict(X_test)
+
+
+            R2_scores[j,i] = metrics.r2_score(z_true_test_1d, z_pred_test)
+            MSE_test[j,i] = metrics.mean_squared_error(z_true_test_1d, z_pred_test)
+
+            # R2_scores[j,i], MSE_test[j,i], MSE_train[j,i], error_test[j,i],  bias_test[j,i], var_test[j,i], error_train[j,i] = cross_validation(x, y, z, k=5, p=polys[j], dataset=dataset, param=params[i], method=method)
 
     print ("\n\n-----CV done-----")
 
@@ -101,7 +128,7 @@ def main():
         z = FrankeFunction(x,y)
 
     # visualize model (or dataset) as a 2D heatmap
-    terrain_2d(x,y,z)
+    plot_terrain_2d(z)
 
     # visualize model in 3D given colormap and transparency
     plot_surf(x,y,z,color=cm.coolwarm, alpha=0.5)

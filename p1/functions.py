@@ -10,6 +10,7 @@ from sklearn.model_selection import KFold
 from sklearn import linear_model
 from imageio import imread
 import sys
+from sklearn.model_selection import train_test_split
 
 def CreateDesignMatrix_X(x, y, p = 5):
 	"""
@@ -51,9 +52,10 @@ def Franke_dataset(n, noise=0.5):
 
 	eps = np.asarray([np.random.normal(0,noise,n*n)])
 	eps = np.reshape(eps, (n,n))
-	z = FrankeFunction(x,y) + eps
+	FF = FrankeFunction(x,y)
+	z = FF + eps
 
-	return x, y, z
+	return x, y, z, FF
 
 
 def DataImport(filename, sc=10):
@@ -130,7 +132,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 
 		if (method == 'lasso'):
 			# Generate linear model using Lasso and perform predictions
-			model = linear_model.Lasso(alpha=param, fit_intercept=False, tol=0.01, max_iter=30000)
+			model = linear_model.Lasso(alpha=param, fit_intercept=False, tol=0.01, max_iter=100000)
 			lasso = model.fit(X_train_k, z_train_1d)
 			z_pred_test = lasso.predict(X_test_k)
 			z_pred_train = lasso.predict(X_train_k)
@@ -146,7 +148,7 @@ def cross_validation(x, y, z, k, p, dataset, param=0.1, method='ols', penalize_i
 			R2_sum += metrics.r2_score(z_true_test_1d, z_pred_test)
 			MSE_test += metrics.mean_squared_error(z_true_test_1d, z_pred_test)
 			MSE_train += metrics.mean_squared_error(z_true_train_1d, z_pred_train)
-			
+
 		else:
 			R2_sum += metrics.r2_score(z_test_1d, z_pred_test)
 			MSE_test += metrics.mean_squared_error(z_test_1d, z_pred_test)
@@ -223,7 +225,7 @@ def UnitTest():
 	p = 5
 	len_beta = int((p+1)*(p+2)/2) # Number of elements in beta (!= p generally)
 
-	x,y,z = Franke_dataset(50,0)
+	x,y,z,z_true = Franke_dataset(50,0)
 	X = CreateDesignMatrix_X(x,y,p)
 	z_1d = np.ravel(z)
 
@@ -285,12 +287,11 @@ def plot_heatmap(params, polys, MSE):
 	plt.show()
 
 
-def terrain_2d(x,y,z):
+def plot_terrain_2d(z):
 	plt.figure()
 	plt.imshow(z, cmap=cm.terrain)
 	plt.colorbar()
 	plt.clim(0,1)
-
 	plt.show()
 
 

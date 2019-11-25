@@ -9,7 +9,7 @@ dataset = 'Franke'
 # Determine dataset to analyze
 if (dataset == 'Franke'):
     n = 50
-    x, y, z = Franke_dataset(n, noise=0.0)
+    x, y, z, z_true = Franke_dataset(n, noise=0.0)
     z_full = z
     nx = n
     ny = n
@@ -28,12 +28,12 @@ else:
     x, y = np.meshgrid(x, y)
 
 # Plot dataset
-plot_surf(x,y,z,color=cm.coolwarm, alpha=1)
-plt.show()
+# plot_terrain_2d(z)
+# plt.show()
 
-z_, z_pred = predict_poly(x,y,z,6, param=1.247e-4, method='ridge')
+z_, z_pred = predict_poly(x,y,z, 7, param=0, method='ols')
 
 # PLot prediction
 z_pred = np.reshape(z_pred, (ny,nx))
-plot_surf(x,y,z_pred,color=cm.coolwarm, alpha=1)
+plot_surf(x,y,z,color=cm.coolwarm, alpha=1)
 plt.show()

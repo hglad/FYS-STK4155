@@ -248,6 +248,16 @@ def Franke_dataset(n, noise=0.5):
 
     return X, x, y, z, FF
 
+def design_matrix(x, y, n):
+    X = np.zeros((n*n, 2))
+    FF = np.zeros(n*n)
+    for i in range(n):
+        for j in range(n):
+            X[i*n + j] = [x[i], y[j]]
+            
+    return X
+
+
 def get_grid(X):
     n, m = X.shape
     n_grid = int(np.sqrt(n))

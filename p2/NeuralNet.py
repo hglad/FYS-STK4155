@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score
 from sklearn.compose import ColumnTransformer
 from sklearn import metrics
+import seaborn as sb
 
 class NeuralNet:
     def __init__(self, X, y, neuron_lengths=[16,8], hidden_a_func=['sigmoid', 'tanh'], output_a_func='softmax', type='class'):
@@ -222,6 +223,7 @@ class NeuralNet:
 
 
     def predict(self, X_test):
+        # For multiple output neurons
         self.a[0] = X_test
         self.feed_forward()
 
@@ -308,7 +310,7 @@ class NeuralNet:
 
         xtick = gammas
         ytick = params
-        sb.heatmap(heatmap_array, annot=True, fmt="g", xticklabels=xtick, yticklabels=ytick)
+        sb.heatmap(heatmap_array, annot=True, fmt="1.4f", xticklabels=xtick, yticklabels=ytick)
         plt.xlabel('learning rate $\gamma$')
         plt.ylabel('penalty $\lambda$')
         plt.show()

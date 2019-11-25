@@ -5,8 +5,8 @@ from matplotlib import cm
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 
-import tensorflow as tf
-from tensorflow import keras
+# import tensorflow as tf
+# from tensorflow import keras
 
 # def u(x):
 #     return tf.sin(np.pi*x)
@@ -16,10 +16,11 @@ def sigmoid(z):
 def deep_neural_network(deep_params, x):
     # x is now a point and a 1D numpy array; make it a column vector
     num_coordinates = np.size(x,0)
+    print (num_coordinates)
     x = x.reshape(num_coordinates,-1)
 
     num_points = np.size(x,1)
-
+    print (num_points)
     # N_hidden is the number of hidden layers
     N_hidden = np.size(deep_params) - 1 # -1 since params consist of parameters to all the hidden layers AND the output layer
 
@@ -28,6 +29,7 @@ def deep_neural_network(deep_params, x):
     x_prev = x_input
 
     ## Hidden layers:
+    print (x.shape)
 
     for l in range(N_hidden):
         # From the list of parameters P; find the correct weigths and bias for this layer
@@ -38,9 +40,11 @@ def deep_neural_network(deep_params, x):
 
         z_hidden = np.matmul(w_hidden, x_prev)
         x_hidden = sigmoid(z_hidden)
-
+        # print (w_hidden.shape, x_prev.shape, z_hidden.shape)
         # Update x_prev such that next layer can use the output from this layer
         x_prev = x_hidden
+        # exit()
+
 
     ## Output layer:
 
@@ -83,9 +87,13 @@ def cost_function(P, x, t):
             g_t = g_trial(point,P)
             g_t_jacobian = g_t_jacobian_func(point,P)
             g_t_hessian = g_t_hessian_func(point,P)
-
+            print (g_t_jacobian)
+            print(g_t_hessian)
             g_t_dt = g_t_jacobian[1]
             g_t_d2x = g_t_hessian[0][0]
+            print (g_t_dt)
+            print (g_t_d2x)
+            exit()
 
             func = RHS(point)
 
@@ -107,7 +115,8 @@ def solve_pde_deep_neural_network(x,t, num_neurons, num_iter, lmb):
     ## Set up initial weigths and biases
 
     # Initialize the list of parameters:
-    P = [None]*(N_hidden + 1) # + 1 to include the output layer
+    P = np.empty(N_hidden+1, dtype=np.ndarray)#[None]*(N_hidden + 1) # + 1 to include the output layer
+    print (P)
 
     P[0] = npr.randn(num_neurons[0], 2 + 1 ) # 2 since we have two points, +1 to include bias
     for l in range(1,N_hidden):
@@ -139,7 +148,7 @@ def pde_nn():
     ## Decide the vales of arguments to the function to solve
     Nx = 10; Nt = 10
     x = np.linspace(0, 1, Nx)
-    t = np.linspace(0,1, Nt)
+    t = np.linspace(0, 1, Nt)
 
     ## Set up the parameters for the network
     # num_hidden_neurons = [100, 25]

@@ -241,49 +241,6 @@ def pde_nn():
 
     return
 
-def tf_nn():
-    Nx = 10
-    Nt = 10
-
-    x = np.linspace(0,1,Nx)
-    t = np.linspace(0,1,Nt)
-
-    X,T = np.meshgrid(x, t)
-
-    x = X.ravel()
-    t = T.ravel()
-
-    ## The construction phase
-    zeros = tf.reshape(tf.convert_to_tensor(np.zeros(x.shape)),shape=(-1,1))
-    x = tf.reshape(tf.convert_to_tensor(x),shape=(-1,1))
-    t = tf.reshape(tf.convert_to_tensor(t),shape=(-1,1))
-
-    pts = tf.concat([x,t],1)
-
-    num_iter = 100000
-    num_hidden_neurons = [90]
-    num_hidden_layers = len(num_hidden_neurons)
-
-    X = tf.convert_to_tensor(X)
-    T = tf.convert_to_tensor(T)
-
-    with tf.variable_scope('dnn'):
-        num_hidden_layers = np.size(num_hidden_neurons)
-
-        previous_layer = pts
-
-        for l in range(num_hidden_layers):
-            current_layer = tf.layers.dense(previous_layer, num_hidden_neurons[l],activation=tf.nn.sigmoid)
-            previous_layer = current_layer
-
-        dnn_output = tf.layers.dense(previous_layer, 1)
-
-
-
-
-    return
-
-
 def forward_euler(animate=False):
     # Discretization parameters
     dx = 1./100.

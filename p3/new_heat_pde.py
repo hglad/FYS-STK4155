@@ -244,8 +244,8 @@ nt = 10
 x = np.linspace(0,1,nx)
 t = np.linspace(0,1,nt)
 
-nn = NeuralNetPDE(x, t, config=[100], hidden_a_func=['sigmoid'], output_a_func='sigmoid')
-nn.train(lmbd=0.0001, num_iter=10)
+nn = NeuralNetPDE(x, t, config=[100], hidden_a_func=['sigmoid'], output_a_func='')
+nn.train(lmbd=0.00001, num_iter=30)
 nn.results()
 
 

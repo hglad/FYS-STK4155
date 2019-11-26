@@ -86,9 +86,10 @@ def tf_nn(nx, nt, num_hidden_neurons, num_iter=100000, eta=0.01):
 
             previous_layer = current_layer
 
-        dnn_output = tf.layers.dense(previous_layer, 1, name='output')
+        dnn_output = tf.layers.dense(previous_layer, 1, name='output', activation=None)
 
     # Define loss function
+    # trial function satisfies boundary conditions and initial condition
     with tf.name_scope('loss'):
         g_t = (1 - t)*u(x) + x*(1 - x)*t*dnn_output
         g_t_d2x = tf.gradients(tf.gradients(g_t, x), x)
@@ -103,17 +104,17 @@ def tf_nn(nx, nt, num_hidden_neurons, num_iter=100000, eta=0.01):
     init = tf.global_variables_initializer()
 
     g_e = u_e(x, t)
-    g_dnn = None
+    # g_dnn = None
 
     with tf.Session() as sess:
         init.run()
         for i in range(num_iter):
             sess.run(training_op)
 
-            # if i % 100 == 0:
-            #     # print (loss.eval())
-            #     # g_e = g_e.eval()
-            #     # g_dnn = g_t.eval()
+            if i % 1000 == 0:
+                print (loss.eval())
+                # g_e = g_e.eval()
+                # g_dnn = g_t.eval()
             #
             #     plot_g_e = g_e.eval().reshape((nt, nx))
             #     plot_g_dnn = g_t.eval().reshape((nt, nx))
@@ -123,7 +124,6 @@ def tf_nn(nx, nt, num_hidden_neurons, num_iter=100000, eta=0.01):
             #     plt.axis([0,1,0,0.1])
             #     plt.pause(0.001)
             #     plt.clf()
-
 
         g_e = g_e.eval()        # analytical solution
         g_dnn = g_t.eval()      # NN solution
@@ -214,7 +214,7 @@ def forward_euler(animate=False):
     CX = dt/dx**2
 
     print (nx, nt)
-    
+
     # Initialize arrays
     u = np.zeros((nt, nx))
     u_sc = np.zeros(nx)
@@ -246,13 +246,3 @@ def forward_euler(animate=False):
     x, t = np.meshgrid(x, t)
     diff = np.abs(u - u_e_np(x,t))
     print (np.max(diff))
-
-def main():
-    num_iter = 100000
-    num_hidden_neurons = [100, 20]
-    nx = 10
-    nt = 10
-    forward_euler(animate=False)
-    # diff_nn = tf_nn(nx, nt, num_hidden_neurons, num_iter=100000, eta=0.01)
-
-main()

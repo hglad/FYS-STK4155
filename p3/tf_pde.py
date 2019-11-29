@@ -9,8 +9,10 @@ from mpl_toolkits.mplot3d import axes3d
 
 import tensorflow.compat.v1 as tf
 # import tensorflow as tf
-from tensorflow import keras
+tf.disable_eager_execution()
+from tensorflow.compat.v1 import keras
 tf.logging.set_verbosity(tf.logging.ERROR)
+tf.executing_eagerly()
 
 # tf.disable_v2_behavior()
 def tensorflow_shutup():
@@ -48,7 +50,7 @@ def u_e_np(x, t):
     return np.exp(-np.pi**2*t)*np.sin(np.pi*x)
 
 
-def tf_nn(nx, nt, num_hidden_neurons, num_iter=100000, eta=0.01):
+def tf_nn(nx, nt, num_hidden_neurons, activations, num_iter=100000, eta=0.01):
     tf.reset_default_graph()
 
     # Set a seed to ensure getting the same results from every run
@@ -78,7 +80,6 @@ def tf_nn(nx, nt, num_hidden_neurons, num_iter=100000, eta=0.01):
     # Define layer structure
     with tf.name_scope('dnn'):
         num_hidden_layers = np.size(num_hidden_neurons)
-        activations = [tf.nn.sigmoid, tf.nn.sigmoid]
         previous_layer = pts
 
         for l in range(num_hidden_layers):
@@ -98,7 +99,7 @@ def tf_nn(nx, nt, num_hidden_neurons, num_iter=100000, eta=0.01):
 
     # Define optimizer
     with tf.name_scope('train'):
-        optimizer = tf.train.GradientDescentOptimizer(eta)
+        optimizer = tf.train.AdamOptimizer(eta)
         training_op = optimizer.minimize(loss)
 
     init = tf.global_variables_initializer()
@@ -143,22 +144,22 @@ def tf_nn(nx, nt, num_hidden_neurons, num_iter=100000, eta=0.01):
     ax = fig.gca(projection='3d')
     ax.set_title('Solution from the deep neural network w/ %d layer'%len(num_hidden_neurons))
     s = ax.plot_surface(X,T,G_dnn,linewidth=0,antialiased=False,cmap=cm.viridis)
-    ax.set_xlabel('Time $t$')
-    ax.set_ylabel('Position $x$');
+    ax.set_ylabel('Time $t$')
+    ax.set_xlabel('Position $x$');
 
     fig = plt.figure(figsize=(10,10))
     ax = fig.gca(projection='3d')
     ax.set_title('Analytical solution')
     s = ax.plot_surface(X,T,G_e,linewidth=0,antialiased=False,cmap=cm.viridis)
-    ax.set_xlabel('Time $t$')
-    ax.set_ylabel('Position $x$');
+    ax.set_ylabel('Time $t$')
+    ax.set_xlabel('Position $x$');
 
     fig = plt.figure(figsize=(10,10))
     ax = fig.gca(projection='3d')
     ax.set_title('Difference')
     s = ax.plot_surface(X,T,diff,linewidth=0,antialiased=False,cmap=cm.viridis)
-    ax.set_xlabel('Time $t$')
-    ax.set_ylabel('Position $x$');
+    ax.set_ylabel('Time $t$')
+    ax.set_xlabel('Position $x$');
 
     ## Take some 3D slices
     indx1 = 0

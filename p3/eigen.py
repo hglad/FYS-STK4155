@@ -87,59 +87,45 @@ def grad(model, x, t, A):
     return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
 
-def main(dx):
-    n = 3
-    Nx = 10
-    Nt = 31
-    # A = tf.random.uniform([n, n], -1, 1, dtype=tf.float64, seed=42)
-    A = tf.constant([[3, 2, 4], [2, 0, 2], [4, 2, 3]], dtype=tf.float64)
+def FE_eigen(dt=0.001):
+    import sys
+    np.random.seed(12)
+    # Initialize arrays
+    x = np.asarray([0, 0, 1])
+    A = np.asarray([[3, 2, 4], [2, 0, 2], [4, 2, 3]])
 
-    start = tf.constant(0, dtype=tf.float64)
-    stop = tf.constant(10, dtype=tf.float64)
-    X0 = tf.constant([0.2, 0.5, 0.8], dtype=tf.float64)
-    t = tf.linspace(start, stop, Nt)
-    # X, T = np.meshgrid(tf.reshape(tf.linspace(start, stop, Nx), (-1, 1)),
-                       # tf.reshape(tf.linspace(start, stop, Nt), (-1, 1)))
+    # Random symmetric matrix:
+    # Q = np.random.randn(4,4)
+    # A = (Q.T + Q)/2.
 
-    x0, t = tf.reshape(X0, (-1, 1)), tf.reshape(t, (-1, 1))
-    learning_rate = 0.01
-    epochs = 100
+    # A = -A
+    lmbd = np.matmul(np.matmul(x.T, A), x)/np.matmul(x.T, x)
 
-    model = DNModel()
-    optimizer = tf.keras.optimizers.Adam(learning_rate)
-
-    # Training
+    # Solution using numpy
     lmbd_true, v_true = np.linalg.eig(A)
-    print (lmbd_true)
-    print (v_true)
-    # v = x0
+    print (A, '\n')
+    print (v_true, '\n')
+    print (lmbd_true, '\n')
+    eigv = np.max(lmbd_true)
 
-    for t_ in t:
-        t_ = tf.reshape(t_, (-1, 1))
-        for epoch in range(epochs):
-            cost, gradients = grad(model, x0, t_, A)
-            optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    iters = 0
+    max_iters = 100000
+    eps = 1e-5
 
-            print('  \r', end='')
-            print(f'Step: {optimizer.iterations.numpy()}, '
-                  + f'Loss: {tf.reduce_mean(cost.numpy())}', flush=True, end='')
+    while abs(eigv - lmbd) > eps and iters < max_iters:
+        x = x + dt*(np.matmul( np.matmul(x.T, x)*A, x) \
+        - np.matmul(np.matmul(x.T, A), x)*x)
 
-        print('')
+        lmbd = np.matmul(np.matmul(x.T, A), x)/np.matmul(x.T, x)
 
-        u_dnn = trial_solution_eig(model, x0, t_)
-        # u_dnn = tf.reshape(u_dnn, (Nt, n))
+        sys.stdout.write('lambda = %1.8f  \r' % (lmbd) )
+        sys.stdout.flush()
+        iters += 1
 
-        # exit()
-        v = u_dnn
-        term1 = tf.matmul(tf.matmul(tf.transpose(v), A), v)
-        term2 = tf.matmul(tf.transpose(v), v)
-
-        lmbd = term1/term2
-        tf.print(lmbd)
-
-    # xx = np.linspace(0, 1, Nx)
-    # tt = np.linspace(0, 10, Nt)
+    print ("Computed eigenvector and eigenvalue:")
+    print(x)
+    print(lmbd)
+    print (iters, "iters")
 
 
-if __name__ == '__main__':
-    main(0.1)
+#
